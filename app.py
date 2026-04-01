@@ -8,6 +8,8 @@ import os
 import sys
 import tempfile
 import traceback
+import zipfile
+import io
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -161,13 +163,53 @@ with st.sidebar:
             help="Public GitHub repository URL",
         )
     else:
-        uploaded_file = st.file_uploader("Upload ZIP File", type=["zip"])
-        if uploaded_file:
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
-            tmp.write(uploaded_file.read())
-            tmp.flush()
-            zip_path = tmp.name
-            is_zip = True
+        st.markdown("#### 📦 Upload Project Files")
+        st.caption(
+            "**Option 1:** Upload a single ZIP file containing your entire project folder\n\n"
+            "**Option 2:** Select multiple Python files from your project (preserves folder structure)"
+        )
+        
+        uploaded_files = st.file_uploader(
+            "Choose files",
+            type=["zip", "py"],
+            accept_multiple_files=True,
+            help="Upload ZIP file(s) or individual Python files"
+        )
+        
+        if uploaded_files:
+            # Handle ZIP files and multiple file uploads
+            tmp_dir = tempfile.mkdtemp()
+            
+            # Check if we have a single ZIP file
+            if len(uploaded_files) == 1 and uploaded_files[0].name.endswith(".zip"):
+                # Single ZIP file - extract it
+                tmp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+                tmp_zip.write(uploaded_files[0].read())
+                tmp_zip.flush()
+                zip_path = tmp_zip.name
+                is_zip = True
+            else:
+                # Multiple files or mix of ZIP and PY files - create a ZIP from them
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                    for uploaded_file in uploaded_files:
+                        if uploaded_file.name.endswith(".zip"):
+                            # Extract ZIP contents into the new ZIP
+                            with zipfile.ZipFile(io.BytesIO(uploaded_file.getvalue())) as inner_zip:
+                                for item in inner_zip.namelist():
+                                    zip_file.writestr(item, inner_zip.read(item))
+                        else:
+                            # Add Python files maintaining relative paths
+                            zip_file.writestr(uploaded_file.name, uploaded_file.getvalue())
+                
+                # Save the created ZIP
+                tmp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+                tmp_zip.write(zip_buffer.getvalue())
+                tmp_zip.flush()
+                zip_path = tmp_zip.name
+                is_zip = True
+            
+            st.success(f"✅ Loaded {len(uploaded_files)} file(s)")
 
     st.markdown("---")
     st.markdown("### 🤖 LLM Settings")
