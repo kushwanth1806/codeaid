@@ -1,14 +1,19 @@
 """
 scanner.py
 ----------
-AST-based static analysis agent.
+Multi-language static analysis agent.
 
-Detects:
+Detects language-agnostic and language-specific issues:
   - Syntax errors
   - Unused imports
   - Long functions  (> MAX_FUNC_LINES lines)
-  - Too many parameters (> MAX_PARAMS)
+  - Too many parameters (> MAX_PARAMS) [Python only]
   - TODO / FIXME comments
+  - Line too long
+  - Trailing whitespace
+  - Empty files
+
+Supports: Python, JavaScript, TypeScript, Java, Go, Rust, C#, Ruby, PHP
 
 Each issue is returned as a dict:
   {
@@ -25,7 +30,11 @@ import ast
 import re
 import tokenize
 import io
-from typing import List, Dict
+from pathlib import Path
+from typing import List, Dict, Optional
+
+from core.lang_detector import detect_languages, get_language_info
+from core.agents.universal_analyzer import detect_universal_issues, detect_unused_imports
 
 MAX_FUNC_LINES = 50
 MAX_PARAMS = 7
@@ -38,9 +47,22 @@ MAX_PARAMS = 7
 def scan_repository(files: List[Dict]) -> List[Dict]:
     """
     Wrapper function: Scan a list of files and return all detected issues.
-    Alias for scan_files.
+    Supports multiple languages.
+    
+    Parameters
+    ----------
+    files : List[Dict]
+        File list with "path" and "source" keys
+    
+    Returns
+    -------
+    List of issue dicts
     """
-    return scan_files(files)
+    # Detect languages in the repository
+    detection = detect_languages(files)
+    primary_lang = detection.get("primary_language", "python")
+    
+    return scan_files(files, primary_lang)
 
 
 def summarize_scan(issues: List[Dict]) -> Dict:
@@ -66,21 +88,32 @@ def summarize_scan(issues: List[Dict]) -> Dict:
     return summary
 
 
-def scan_files(files: List[Dict]) -> List[Dict]:
+def scan_files(files: List[Dict], primary_language: str = "python") -> List[Dict]:
     """
-    Run all checks on every file.
+    Run all checks on every file (multi-language support).
 
     Parameters
     ----------
     files : list of {"path": str, "source": str}
+    primary_language : str, language to use for language-specific checks
 
     Returns
     -------
     list of issue dicts
     """
     all_issues: List[Dict] = []
+    
     for f in files:
-        all_issues.extend(_scan_single(f["path"], f["source"]))
+        path = f.get("path", "")
+        source = f.get("source", "")
+        
+        # Detect file language
+        file_ext = Path(path).suffix.lower()
+        file_lang = _detect_file_language(path, primary_language)
+        
+        # Scan the file
+        all_issues.extend(_scan_single(path, source, file_lang))
+    
     return all_issues
 
 
@@ -113,31 +146,72 @@ def scan_file(file_info: Dict) -> Dict:
 # Per-file scanning
 # ---------------------------------------------------------------------------
 
-def _scan_single(path: str, source: str) -> List[Dict]:
+def _detect_file_language(path: str, primary_language: str = "python") -> str:
+    """Detect the language of a file based on extension."""
+    from core.lang_detector import LANGUAGE_EXTENSIONS
+    
+    ext = Path(path).suffix.lower()
+    
+    for lang, exts in LANGUAGE_EXTENSIONS.items():
+        if ext in exts:
+            return lang
+    
+    return primary_language
+
+
+def _scan_single(path: str, source: str, language: str = "python") -> List[Dict]:
+    """
+    Scan a single file for issues (multi-language support).
+    
+    Parameters
+    ----------
+    path : str
+        File path
+    source : str
+        Source code
+    language : str
+        Detected language
+    
+    Returns
+    -------
+    List of issue dicts
+    """
     issues: List[Dict] = []
-
-    # 1. Syntax check first – if it fails we can't run AST checks
-    tree, syntax_issue = _check_syntax(path, source)
-    if syntax_issue:
-        issues.append(syntax_issue)
-        return issues  # no point running further checks
-
-    # 2. AST-based checks
-    issues.extend(_check_unused_imports(path, source, tree))
-    issues.extend(_check_long_functions(path, tree))
-    issues.extend(_check_too_many_params(path, tree))
-
-    # 3. Token / regex-based checks
-    issues.extend(_check_todo_comments(path, source))
-
+    
+    # Language-specific source syntax check
+    if language == "python":
+        # 1. Python syntax check first
+        tree, syntax_issue = _check_python_syntax(path, source)
+        if syntax_issue:
+            issues.append(syntax_issue)
+            return issues
+        
+        # 2. Python AST-based checks
+        issues.extend(_check_unused_imports_python(path, source, tree))
+        issues.extend(_check_long_functions_python(path, tree))
+        issues.extend(_check_too_many_params_python(path, tree))
+    else:
+        # For non-Python, do basic syntax/structure check
+        if not source.strip():
+            issues.append({
+                "file": path,
+                "line": -1,
+                "issue_type": "empty_file",
+                "description": "File is empty",
+                "severity": "warning",
+                "fixable": False,
+            })
+        
+        # Language-specific unused import detection
+        issues.extend(detect_unused_imports(path, source, language))
+    
+    # 3. Universal checks (all languages)
+    issues.extend(detect_universal_issues(path, source, language))
+    
     return issues
 
 
-# ---------------------------------------------------------------------------
-# Individual checkers
-# ---------------------------------------------------------------------------
-
-def _check_syntax(path: str, source: str):
+def _check_python_syntax(path: str, source: str):
     """Return (ast_tree, None) on success, (None, issue_dict) on failure."""
     try:
         tree = ast.parse(source, filename=path)
@@ -154,11 +228,10 @@ def _check_syntax(path: str, source: str):
         return None, issue
 
 
-def _check_unused_imports(path: str, source: str, tree: ast.AST) -> List[Dict]:
-    """Detect imported names that are never referenced in the module body."""
+def _check_unused_imports_python(path: str, source: str, tree: ast.AST) -> List[Dict]:
+    """Detect unused Python imports using AST."""
     issues: List[Dict] = []
 
-    # Collect imported names → line numbers
     imported: Dict[str, int] = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -168,11 +241,10 @@ def _check_unused_imports(path: str, source: str, tree: ast.AST) -> List[Dict]:
         elif isinstance(node, ast.ImportFrom):
             for alias in node.names:
                 if alias.name == "*":
-                    continue  # wildcard – skip
+                    continue
                 name = alias.asname if alias.asname else alias.name
                 imported[name] = node.lineno
 
-    # Collect all Name usages outside import statements
     used: set = set()
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -180,7 +252,6 @@ def _check_unused_imports(path: str, source: str, tree: ast.AST) -> List[Dict]:
         if isinstance(node, ast.Name):
             used.add(node.id)
         elif isinstance(node, ast.Attribute):
-            # capture root of attribute chain: foo.bar → foo
             root = node
             while isinstance(root, ast.Attribute):
                 root = root.value
@@ -201,8 +272,8 @@ def _check_unused_imports(path: str, source: str, tree: ast.AST) -> List[Dict]:
     return issues
 
 
-def _check_long_functions(path: str, tree: ast.AST) -> List[Dict]:
-    """Flag functions whose body exceeds MAX_FUNC_LINES lines."""
+def _check_long_functions_python(path: str, tree: ast.AST) -> List[Dict]:
+    """Flag long Python functions."""
     issues: List[Dict] = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -224,13 +295,12 @@ def _check_long_functions(path: str, tree: ast.AST) -> List[Dict]:
     return issues
 
 
-def _check_too_many_params(path: str, tree: ast.AST) -> List[Dict]:
-    """Flag functions with more than MAX_PARAMS parameters."""
+def _check_too_many_params_python(path: str, tree: ast.AST) -> List[Dict]:
+    """Flag Python functions with too many parameters."""
     issues: List[Dict] = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             args = node.args
-            # count all kinds of arguments
             param_count = (
                 len(args.args)
                 + len(args.posonlyargs)
@@ -250,23 +320,4 @@ def _check_too_many_params(path: str, tree: ast.AST) -> List[Dict]:
                     "severity": "warning",
                     "fixable": False,
                 })
-    return issues
-
-
-def _check_todo_comments(path: str, source: str) -> List[Dict]:
-    """Detect TODO / FIXME / HACK / XXX annotations in comments."""
-    issues: List[Dict] = []
-    pattern = re.compile(r"#.*\b(TODO|FIXME|HACK|XXX)\b", re.IGNORECASE)
-    for lineno, line in enumerate(source.splitlines(), start=1):
-        m = pattern.search(line)
-        if m:
-            tag = m.group(1).upper()
-            issues.append({
-                "file": path,
-                "line": lineno,
-                "issue_type": "todo_comment",
-                "description": f"{tag} comment found: {line.strip()[:120]}",
-                "severity": "info",
-                "fixable": False,
-            })
     return issues

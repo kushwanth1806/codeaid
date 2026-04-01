@@ -6,7 +6,7 @@ Manages agent interactions and aggregates all results.
 """
 
 import time
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, BinaryIO
 
 from core.repo_loader import load_repository, cleanup_repo
 from core.agents.scanner import scan_repository, summarize_scan
@@ -14,6 +14,7 @@ from core.agents.repair import repair_repository, summarize_repairs
 from core.agents.verifier import verify_all_repairs, summarize_verification
 from core.agents.explain import explain_scan_results
 from core.agents.project_understanding import analyze_project, build_project_summary_text
+from core.agents.export import export_repaired_project
 from core.agents import llm_agent
 
 
@@ -97,8 +98,10 @@ def run_pipeline(
     _progress("Applying automatic repairs…", 0.50)
     t0 = time.time()
     try:
-        repair_results = repair_repository(repo_data["python_files"], scan_results)
-        repo_data["python_files"] = [f for f in repo_data["python_files"]]  # reload if modified
+        # Use all source files for multi-language repair
+        source_files = repo_data.get("all_source_files", repo_data["python_files"])
+        repair_results = repair_repository(source_files, scan_results)
+        repo_data["all_source_files"] = source_files  # Update with repaired files
         repair_summary = summarize_repairs(repair_results)
     except Exception as e:
         results["errors"].append(f"Repair failed: {e}")
@@ -172,6 +175,39 @@ def run_pipeline(
 
     results["total_time"] = round(sum(results["timings"].values()), 2)
     return results
+
+
+def export_pipeline_results(
+    pipeline_results: Dict,
+    files: List[Dict],
+    export_format: str = "zip"
+) -> Tuple[BinaryIO, str]:
+    """
+    Export repaired project and analysis results.
+    
+    Parameters
+    ----------
+    pipeline_results : Dict
+        Results from run_pipeline()
+    files : List[Dict]
+        Current (repaired) files
+    export_format : str
+        Export format ("zip", "tar.gz", etc.)
+    
+    Returns
+    -------
+    Tuple of (file_buffer, filename)
+    """
+    issues = get_all_issues_flat(pipeline_results)
+    repairs = pipeline_results.get("stages", {}).get("repair", {}).get("results", [])
+    
+    return export_repaired_project(
+        repo_path="",  # We have the files already
+        files=files,
+        issues=issues,
+        repairs_applied=repairs,
+        export_format=export_format
+    )
 
 
 def get_all_issues_flat(results: Dict) -> List[Dict]:

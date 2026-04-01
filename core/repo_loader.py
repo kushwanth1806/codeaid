@@ -21,13 +21,14 @@ from typing import List, Dict, Optional
 
 def load_repository(source: str, is_zip: bool = False) -> Dict:
     """
-    Wrapper function: Load a repository from either a ZIP file or GitHub URL.
+    Multi-language repository loader: Load from ZIP or GitHub URL.
     
     Returns a dict with:
       {
         "repo_path": str,
-        "python_files": List[Dict],
-        "all_files": List[Dict],
+        "python_files": List[Dict],  # Python files only (backward compat)
+        "all_source_files": List[Dict],  # All source code files
+        "all_files": List[Dict],  # Config, docs, and source
         "temp_dir": str
       }
     """
@@ -36,17 +37,19 @@ def load_repository(source: str, is_zip: bool = False) -> Dict:
         if is_zip:
             with open(source, 'rb') as f:
                 zip_bytes = f.read()
-            temp_dir, python_files = load_from_zip(zip_bytes)
+            temp_dir, py_files = load_from_zip(zip_bytes)
         else:
-            temp_dir, python_files = load_from_github(source)
+            temp_dir, py_files = load_from_github(source)
         
-        # Collect all files (not just .py) from the repository
+        # Collect all files
         all_files = _collect_all_files(temp_dir)
+        all_source_files = _collect_source_files(temp_dir)  # NEW: all source code
         repo_path = temp_dir
         
         return {
             "repo_path": repo_path,
-            "python_files": python_files,
+            "python_files": py_files,  # For backward compatibility
+            "all_source_files": all_source_files,  # New: multi-language
             "all_files": all_files,
             "temp_dir": temp_dir,
         }
@@ -260,5 +263,78 @@ def _collect_python_files(root: str) -> List[Dict]:
             collected.append(enriched)
         except OSError:
             continue  # unreadable file – skip silently
+
+    return collected
+
+
+def _collect_source_files(root: str) -> List[Dict]:
+    """
+    Walk *root* and return source code files for ALL supported languages.
+    
+    Supports: Python, JavaScript, TypeScript, Java, C#, Go, Rust, Ruby, PHP, etc.
+    """
+    collected: List[Dict] = []
+    root_path = Path(root)
+
+    skip_dirs = {
+        ".git", "__pycache__", ".tox", "node_modules",
+        ".venv", "venv", "env", "dist", "build", ".eggs",
+        "target", "bin", "obj",  # Java, C#
+    }
+
+    # Supported source code extensions
+    source_extensions = {
+        # Python
+        ".py",
+        # JavaScript/TypeScript
+        ".js", ".jsx", ".mjs", ".ts", ".tsx",
+        # Java
+        ".java",
+        # C#
+        ".cs",
+        # C/C++
+        ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp",
+        # Go
+        ".go",
+        # Rust
+        ".rs",
+        # Ruby
+        ".rb",
+        # PHP
+        ".php", ".phtml",
+        # Swift
+        ".swift",
+        # Kotlin
+        ".kt", ".kts",
+        # Scala
+        ".scala",
+        # R
+        ".r", ".R",
+        # Shell
+        ".sh", ".bash",
+        # SQL
+        ".sql",
+    }
+
+    for file_path in root_path.rglob("*"):
+        # Skip hidden and build directories
+        if any(part in skip_dirs for part in file_path.parts):
+            continue
+        
+        if file_path.is_dir():
+            continue
+        
+        # Check if source file
+        if file_path.suffix.lower() not in source_extensions:
+            continue
+        
+        try:
+            source = file_path.read_text(encoding="utf-8", errors="replace")
+            rel_path = str(file_path.relative_to(root_path))
+            file_dict = {"path": rel_path, "source": source}
+            enriched = _enrich_file_dict(file_dict)
+            collected.append(enriched)
+        except (OSError, UnicodeDecodeError):
+            continue
 
     return collected

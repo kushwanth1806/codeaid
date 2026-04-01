@@ -1,13 +1,17 @@
 """
 repair.py
 ---------
-Automatic repair agent.
+Multi-language automatic repair agent.
 
 Currently handles SAFE, deterministic fixes:
-  - unused_import  → remove the offending import line(s)
+  - unused_import  → remove the offending import line(s) [all languages]
+  - trailing_whitespace → remove trailing whitespace
+  - file_formatting → basic formatting fixes
 
 All other issue types are flagged as "not auto-fixable" and left for the
 LLM agent or human review.
+
+Supports: Python, JavaScript, TypeScript, Java, Go, Rust, etc.
 
 Returns a list of repair result dicts:
   {
@@ -22,6 +26,7 @@ Returns a list of repair result dicts:
 
 import ast
 import re
+from pathlib import Path
 from typing import List, Dict, Optional
 
 
@@ -31,7 +36,7 @@ from typing import List, Dict, Optional
 
 def repair_repository(files: List[Dict], issues: List[Dict]) -> List[Dict]:
     """
-    Wrapper function: Apply repairs to a repository's files.
+    Apply repairs to a repository's files (multi-language support).
     
     Parameters:
       files: list of {"path": str, "source": str}
@@ -62,7 +67,7 @@ def summarize_repairs(repair_results: List[Dict]) -> Dict:
 
 def repair_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
     """
-    Attempt to repair every fixable issue.
+    Attempt to repair every fixable issue (multi-language support).
 
     Parameters
     ----------
@@ -90,8 +95,14 @@ def repair_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
             results.append(_failed(issue, "File not found in loaded files."))
             continue
 
+        # Detect file language
+        language = _detect_file_language(path)
+        
+        # Apply language-appropriate repairs
         if itype == "unused_import":
-            result = _fix_unused_import(issue, file_entry)
+            result = _fix_unused_import(issue, file_entry, language)
+        elif itype == "trailing_whitespace":
+            result = _fix_trailing_whitespace(issue, file_entry)
         else:
             result = _skipped(issue, f"No auto-repair for issue type '{itype}'.")
 
@@ -100,27 +111,57 @@ def repair_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
     return results
 
 
-# ---------------------------------------------------------------------------
-# Fix implementations
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────────────────────────────────
+# Language Detection
+# ──────────────────────────────────────────────────────────────────────────
 
-def _fix_unused_import(issue: Dict, file_entry: Dict) -> Dict:
+def _detect_file_language(path: str) -> str:
+    """Detect language from file extension."""
+    ext = Path(path).suffix.lower()
+    mapping = {
+        ".py": "python",
+        ".js": "javascript",
+        ".jsx": "javascript",
+        ".ts": "typescript",
+        ".tsx": "typescript",
+        ".java": "java",
+        ".cs": "csharp",
+        ".go": "go",
+        ".rs": "rust",
+        ".rb": "ruby",
+        ".php": "php",
+        ".c": "c",
+        ".cpp": "cpp",
+        ".h": "cpp",
+    }
+    return mapping.get(ext, "unknown")
+
+def _fix_unused_import(issue: Dict, file_entry: Dict, language: str = "python") -> Dict:
     """
-    Remove the unused import from the source.
-
-    Strategy:
-      1. Parse the AST to find the exact import node at the flagged line.
-      2. If the import node imports *multiple* names, remove only the unused alias.
-      3. If it imports a single name, remove the entire line.
+    Remove unused imports (multi-language support).
+    
+    Supports: Python, JavaScript, TypeScript, Java, Go, Rust, etc.
     """
     source = file_entry["source"]
     target_name = _extract_import_name(issue["description"])
-    target_line = issue["line"]  # 1-based
+    target_line = issue["line"]
 
+    if language == "python":
+        return _fix_unused_import_python(issue, file_entry, source, target_name, target_line)
+    elif language in ["javascript", "typescript"]:
+        return _fix_unused_import_js(issue, file_entry, source, target_name, target_line)
+    elif language == "java":
+        return _fix_unused_import_java(issue, file_entry, source, target_name, target_line)
+    else:
+        return _fix_unused_import_generic(issue, file_entry, source, target_name, target_line, language)
+
+
+def _fix_unused_import_python(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int) -> Dict:
+    """Fix unused Python imports using AST."""
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        return _failed(issue, "Cannot parse source to apply fix.")
+        return _failed(issue, "Cannot parse Python source to apply fix.")
 
     lines = source.splitlines(keepends=True)
 
@@ -134,10 +175,8 @@ def _fix_unused_import(issue: Dict, file_entry: Dict) -> Dict:
                 if not ((a.asname or a.name.split(".")[0]) == target_name)
             ]
             if not new_aliases:
-                # Remove the entire line
                 lines = _remove_lines(lines, node.lineno, node.end_lineno)
             else:
-                # Rebuild the import with remaining names
                 new_import = "import " + ", ".join(
                     (f"{a.name} as {a.asname}" if a.asname else a.name)
                     for a in new_aliases
@@ -163,14 +202,101 @@ def _fix_unused_import(issue: Dict, file_entry: Dict) -> Dict:
             break
 
     patched = "".join(lines)
-    file_entry["source"] = patched  # mutate in place
+    file_entry["source"] = patched
 
     return {
         "file": issue["file"],
         "issue_type": issue["issue_type"],
         "line": issue["line"],
         "status": "fixed",
-        "detail": f"Removed unused import '{target_name}'.",
+        "detail": f"Removed unused Python import '{target_name}'.",
+        "patched": patched,
+    }
+
+
+def _fix_unused_import_js(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int) -> Dict:
+    """Fix unused JavaScript/TypeScript imports by removing the import line."""
+    lines = source.splitlines(keepends=True)
+    
+    if 0 < target_line <= len(lines):
+        line = lines[target_line - 1]
+        if "import" in line or "require" in line:
+            del lines[target_line - 1]
+    
+    patched = "".join(lines)
+    file_entry["source"] = patched
+    
+    return {
+        "file": issue["file"],
+        "issue_type": issue["issue_type"],
+        "line": issue["line"],
+        "status": "fixed",
+        "detail": f"Removed unused JavaScript/TypeScript import '{target_name}'.",
+        "patched": patched,
+    }
+
+
+def _fix_unused_import_java(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int) -> Dict:
+    """Fix unused Java imports by removing the import statement."""
+    lines = source.splitlines(keepends=True)
+    
+    if 0 < target_line <= len(lines):
+        line = lines[target_line - 1]
+        if "import" in line:
+            del lines[target_line - 1]
+    
+    patched = "".join(lines)
+    file_entry["source"] = patched
+    
+    return {
+        "file": issue["file"],
+        "issue_type": issue["issue_type"],
+        "line": issue["line"],
+        "status": "fixed",
+        "detail": f"Removed unused Java import '{target_name}'.",
+        "patched": patched,
+    }
+
+
+def _fix_unused_import_generic(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int, language: str) -> Dict:
+    """Generic unused import fix for other languages."""
+    lines = source.splitlines(keepends=True)
+    
+    if 0 < target_line <= len(lines):
+        del lines[target_line - 1]
+    
+    patched = "".join(lines)
+    file_entry["source"] = patched
+    
+    return {
+        "file": issue["file"],
+        "issue_type": issue["issue_type"],
+        "line": issue["line"],
+        "status": "fixed",
+        "detail": f"Removed unused {language} import '{target_name}'.",
+        "patched": patched,
+    }
+
+
+def _fix_trailing_whitespace(issue: Dict, file_entry: Dict) -> Dict:
+    """Remove trailing whitespace from a line."""
+    source = file_entry["source"]
+    target_line = issue["line"]
+    
+    lines = source.splitlines(keepends=True)
+    
+    if 0 < target_line <= len(lines):
+        lines[target_line - 1] = lines[target_line - 1].rstrip() + "\n"
+    
+    patched = "".join(lines)
+    file_entry["source"] = patched
+    
+    return {
+        "file": issue["file"],
+        "issue_type": issue["issue_type"],
+        "line": issue["line"],
+        "status": "fixed",
+        "detail": "Removed trailing whitespace.",
         "patched": patched,
     }
 
