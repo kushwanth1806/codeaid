@@ -83,30 +83,43 @@ def repair_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
     file_map: Dict[str, Dict] = {f["path"]: f for f in files}
 
     results: List[Dict] = []
+    
+    # Group issues by file and sort by line number (descending) to avoid line number shifts
+    issues_by_file: Dict[str, List[Dict]] = {}
     for issue in issues:
-        if not issue.get("fixable"):
-            results.append(_skipped(issue, "Issue marked as not auto-fixable."))
-            continue
-
-        itype = issue["issue_type"]
         path = issue["file"]
-        file_entry = file_map.get(path)
-        if file_entry is None:
-            results.append(_failed(issue, "File not found in loaded files."))
-            continue
-
-        # Detect file language
-        language = _detect_file_language(path)
+        if path not in issues_by_file:
+            issues_by_file[path] = []
+        issues_by_file[path].append(issue)
+    
+    # Process issues for each file in reverse line order to avoid line number shifts
+    for path, file_issues in issues_by_file.items():
+        # Sort by line number descending
+        sorted_issues = sorted(file_issues, key=lambda x: x.get("line", 0), reverse=True)
         
-        # Apply language-appropriate repairs
-        if itype == "unused_import":
-            result = _fix_unused_import(issue, file_entry, language)
-        elif itype == "trailing_whitespace":
-            result = _fix_trailing_whitespace(issue, file_entry)
-        else:
-            result = _skipped(issue, f"No auto-repair for issue type '{itype}'.")
+        for issue in sorted_issues:
+            if not issue.get("fixable"):
+                results.append(_skipped(issue, "Issue marked as not auto-fixable."))
+                continue
 
-        results.append(result)
+            itype = issue["issue_type"]
+            file_entry = file_map.get(path)
+            if file_entry is None:
+                results.append(_failed(issue, "File not found in loaded files."))
+                continue
+
+            # Detect file language
+            language = _detect_file_language(path)
+            
+            # Apply language-appropriate repairs
+            if itype == "unused_import":
+                result = _fix_unused_import(issue, file_entry, language)
+            elif itype == "trailing_whitespace":
+                result = _fix_trailing_whitespace(issue, file_entry)
+            else:
+                result = _skipped(issue, f"No auto-repair for issue type '{itype}'.")
+
+            results.append(result)
 
     return results
 
@@ -166,7 +179,8 @@ def _fix_unused_import_python(issue: Dict, file_entry: Dict, source: str, target
     lines = source.splitlines(keepends=True)
 
     for node in ast.walk(tree):
-        if node.lineno != target_line:
+        # Skip nodes without lineno attribute
+        if not hasattr(node, 'lineno') or node.lineno != target_line:
             continue
 
         if isinstance(node, ast.Import):

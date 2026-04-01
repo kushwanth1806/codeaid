@@ -71,6 +71,7 @@ def run_pipeline(
     results["stages"]["load"] = {
         "repo_path": repo_data["repo_path"],
         "python_file_count": len(repo_data["python_files"]),
+        "all_source_file_count": len(repo_data.get("all_source_files", [])),
         "total_file_count": len(repo_data["all_files"]),
     }
     results["timings"]["load"] = round(time.time() - t0, 2)
@@ -80,7 +81,9 @@ def run_pipeline(
     _progress("Scanning files for issues…", 0.25)
     t0 = time.time()
     try:
-        scan_results = scan_repository(repo_data["python_files"])
+        # Use all source files to support multi-language scanning
+        source_files = repo_data.get("all_source_files", repo_data["python_files"])
+        scan_results = scan_repository(source_files)
         scan_summary = summarize_scan(scan_results)
     except Exception as e:
         results["errors"].append(f"Scanning failed: {e}")
@@ -119,7 +122,9 @@ def run_pipeline(
     _progress("Verifying repaired code…", 0.68)
     t0 = time.time()
     try:
-        verification_results = verify_all_repairs(repair_results, repo_data["python_files"])
+        # Use all source files for multi-language verification
+        source_files = repo_data.get("all_source_files", repo_data["python_files"])
+        verification_results = verify_all_repairs(repair_results, source_files)
         verification_summary = summarize_verification(verification_results)
     except Exception as e:
         results["errors"].append(f"Verification failed: {e}")

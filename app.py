@@ -273,6 +273,26 @@ with st.sidebar:
         """
     )
 
+    st.markdown("---")
+    st.markdown(
+        """
+        **🌍 Multi-Language Support**
+        
+        CodeAid analyzes projects in:
+        - 🐍 Python
+        - 📜 JavaScript/TypeScript
+        - ☕ Java
+        - 🟦 C#
+        - 🐹 Go
+        - 🦀 Rust
+        - 💎 Ruby
+        - 🐘 PHP
+        - And more!
+        
+        File format: Any programming language source files
+        """
+    )
+
 
 # ── Session State ─────────────────────────────────────────────────────────────
 
@@ -354,11 +374,11 @@ if results:
 
         col1, col2, col3, col4, col5 = st.columns(5)
         metrics = [
-            (col1, load_stage.get("python_file_count", 0), "Python Files"),
+            (col1, load_stage.get("all_source_file_count", load_stage.get("python_file_count", 0)), "Source Files"),
             (col2, scan_summary.get("total_issues", 0), "Issues Found"),
-            (col3, scan_summary.get("severity_counts", {}).get("critical", 0), "Critical"),
-            (col4, repair_summary.get("files_changed", 0), "Files Repaired"),
-            (col5, verify_summary.get("pass_rate", 0), "Verify Pass %"),
+            (col3, repair_summary.get("total_repairs", 0), "Issues Fixed"),
+            (col4, repair_summary.get("files_changed", 0), "Files Changed"),
+            (col5, load_stage.get("total_file_count", 0), "Total Files"),
         ]
         for col, val, label in metrics:
             with col:

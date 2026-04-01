@@ -297,7 +297,9 @@ def _detect_unused_imports_js(path: str, source: str, language: str) -> List[Dic
         if match:
             imports_info.append((match.group(1), lineno))
     
-    source_without_imports = re.sub(r"^\s*(?:import|const\s+\w+\s*=\s*require)\s+.+$", "", source, flags=re.MULTILINE)
+    # Remove imports from source to check for usage
+    source_without_imports = re.sub(r"^\s*import\s+.+$", "", source, flags=re.MULTILINE)
+    source_without_imports = re.sub(r"^\s*(?:const|let|var)\s+\w+\s*=\s*require\s*\(.+\);?$", "", source_without_imports, flags=re.MULTILINE)
     
     for name, lineno in imports_info:
         if not re.search(rf'\b{re.escape(name)}\b', source_without_imports):
