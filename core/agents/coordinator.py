@@ -98,6 +98,7 @@ def run_pipeline(
     t0 = time.time()
     try:
         repair_results = repair_repository(repo_data["python_files"], scan_results)
+        repo_data["python_files"] = [f for f in repo_data["python_files"]]  # reload if modified
         repair_summary = summarize_repairs(repair_results)
     except Exception as e:
         results["errors"].append(f"Repair failed: {e}")
@@ -115,7 +116,7 @@ def run_pipeline(
     _progress("Verifying repaired code…", 0.68)
     t0 = time.time()
     try:
-        verification_results = verify_all_repairs(repair_results)
+        verification_results = verify_all_repairs(repair_results, repo_data["python_files"])
         verification_summary = summarize_verification(verification_results)
     except Exception as e:
         results["errors"].append(f"Verification failed: {e}")

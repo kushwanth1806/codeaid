@@ -22,13 +22,20 @@ from typing import List, Dict
 # Public API
 # ---------------------------------------------------------------------------
 
-def verify_all_repairs(repair_results: List[Dict]) -> List[Dict]:
+def verify_all_repairs(repair_results: List[Dict], files: List[Dict]) -> List[Dict]:
     """
     Wrapper function: Verify repaired files.
     
-    For now, returns empty list as verification is optional.
+    Performs compile-checks on all files that had repairs applied.
+    
+    Parameters:
+      repair_results: List of repair result dicts from repair.repair_issues()
+      files: List of current (possibly patched) file dicts
+    
+    Returns:
+      List of verification result dicts
     """
-    return []
+    return verify_repairs(repair_results, files)
 
 
 def summarize_verification(verification_results: List[Dict]) -> Dict:
