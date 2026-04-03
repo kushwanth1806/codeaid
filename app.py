@@ -29,7 +29,7 @@ from utils.codexglue_loader import run_evaluation
 
 st.set_page_config(
     page_title="CodeAid – AI Repository Debugger",
-    page_icon="🔍",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -41,16 +41,23 @@ st.markdown(
     <style>
     :root {
         --primary: #0f3460;
+        --primary-light: #17a2b8;
         --secondary: #e94560;
-        --accent: #f39c12;
+        --secondary-light: #f55f7e;
+        --accent: #17d9ff;
+        --accent-dark: #0f88a0;
         --success: #2ecc71;
         --warning: #f39c12;
         --danger: #e74c3c;
         --info: #3498db;
         --dark: #0a0e27;
+        --darker: #050710;
         --light: #f8f9fa;
         --border: #2d2d44;
+        --border-light: #3d4d6a;
+        --text-primary: #e0e5f0;
         --text-secondary: #a8b2d8;
+        --text-muted: #7a8199;
     }
 
     * {
@@ -59,18 +66,24 @@ st.markdown(
         box-sizing: border-box;
     }
 
-    /* Main Header with Premium Look */
+    body, html {
+        background: linear-gradient(135deg, #0a0e27 0%, #0d1225 50%, #0a0e27 100%);
+    }
+
+    /* Main Header with Premium Logo Integration */
     .main-header {
-        background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 25%, #0f3460 75%, #1a1a2e 100%);
-        padding: 3rem 2rem;
-        border-radius: 15px;
-        margin-bottom: 2.5rem;
+        background: linear-gradient(135deg, rgba(15, 52, 96, 0.3) 0%, rgba(10, 14, 39, 0.6) 50%, rgba(23, 210, 255, 0.05) 100%);
+        padding: 3.5rem 2.5rem;
+        border-radius: 20px;
+        margin-bottom: 3rem;
         text-align: center;
-        border: 1px solid rgba(233, 69, 96, 0.2);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(23, 210, 255, 0.15);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(23, 210, 255, 0.05);
         position: relative;
         overflow: hidden;
+        backdrop-filter: blur(10px);
     }
+    
     .main-header::before {
         content: '';
         position: absolute;
@@ -78,26 +91,439 @@ st.markdown(
         right: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(233, 69, 96, 0.1) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(23, 210, 255, 0.1) 0%, transparent 70%);
         pointer-events: none;
+        animation: pulse 8s ease-in-out infinite;
     }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+    }
+    
+    .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .logo-image {
+        width: 85px;
+        height: 85px;
+        filter: drop-shadow(0 0 15px rgba(23, 210, 255, 0.3));
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .header-text {
+        flex: 1;
+    }
+    
     .main-header h1 {
-        color: #e94560;
-        font-size: 3rem;
+        color: #17d9ff;
+        font-size: 2.8rem;
         margin: 0;
         font-weight: 800;
         letter-spacing: -0.5px;
         position: relative;
         z-index: 1;
+        text-shadow: 0 0 20px rgba(23, 210, 255, 0.3);
+        background: linear-gradient(135deg, #17d9ff 0%, #e94560 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
+    
     .main-header p {
-        color: #a8b2d8;
-        font-size: 1.1rem;
-        margin: 0.8rem 0 0;
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        margin: 0.7rem 0 0;
         position: relative;
         z-index: 1;
-        font-weight: 300;
+        font-weight: 400;
+        letter-spacing: 0.3px;
     }
+    
+    .main-header .subtitle {
+        color: var(--accent);
+        font-size: 0.95rem;
+        margin-top: 0.8rem;
+        position: relative;
+        z-index: 1;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        opacity: 0.9;
+    }
+
+    /* Metric Cards */
+    .metric-card {
+        background: linear-gradient(135deg, rgba(30, 30, 46, 0.6) 0%, rgba(37, 37, 74, 0.4) 100%);
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        padding: 1.8rem;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(23, 210, 255, 0.02);
+        backdrop-filter: blur(5px);
+    }
+    
+    .metric-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 12px 30px rgba(23, 210, 255, 0.2), inset 0 0 20px rgba(23, 210, 255, 0.05);
+        transform: translateY(-5px);
+        background: linear-gradient(135deg, rgba(30, 30, 46, 0.8) 0%, rgba(37, 37, 74, 0.6) 100%);
+    }
+    
+    .metric-card .value {
+        font-size: 2.8rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-card .label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 600;
+    }
+
+    /* Issue Cards */
+    .issue-card {
+        border-left: 5px solid var(--secondary);
+        background: linear-gradient(90deg, rgba(233, 69, 96, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
+        padding: 1.2rem 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid var(--border);
+        backdrop-filter: blur(5px);
+    }
+    
+    .issue-card:hover {
+        background: linear-gradient(90deg, rgba(233, 69, 96, 0.1) 0%, rgba(26, 26, 46, 0.7) 25%);
+        transform: translateX(6px);
+        border-color: var(--secondary);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.15);
+    }
+    
+    .issue-card.warning {
+        border-left-color: var(--warning);
+        background: linear-gradient(90deg, rgba(243, 156, 18, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
+    }
+    
+    .issue-card.warning:hover {
+        border-color: var(--warning);
+        box-shadow: 0 6px 20px rgba(243, 156, 18, 0.15);
+    }
+    
+    .issue-card.info {
+        border-left-color: var(--info);
+        background: linear-gradient(90deg, rgba(52, 152, 219, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
+    }
+    
+    .issue-card.info:hover {
+        border-color: var(--info);
+        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+    }
+    
+    .issue-card.success {
+        border-left-color: var(--success);
+        background: linear-gradient(90deg, rgba(46, 204, 113, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
+    }
+    
+    .issue-card.success:hover {
+        border-color: var(--success);
+        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.15);
+    }
+
+    /* Progress Bar */
+    .health-bar-container {
+        background: var(--border);
+        border-radius: 25px;
+        height: 28px;
+        overflow: hidden;
+        border: 1px solid var(--border-light);
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .health-bar {
+        border-radius: 25px;
+        height: 28px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        background: linear-gradient(90deg, var(--success) 0%, var(--warning) 50%, var(--danger) 100%);
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Info Cards */
+    .tip-card {
+        background: linear-gradient(135deg, rgba(13, 33, 55, 0.5) 0%, rgba(26, 58, 82, 0.3) 100%);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(5px);
+    }
+    
+    .tip-card:hover {
+        border-color: var(--info);
+        background: linear-gradient(135deg, rgba(13, 33, 55, 0.7) 0%, rgba(26, 58, 82, 0.5) 100%);
+        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+    }
+
+    /* Status Indicators */
+    .good-pattern {
+        color: var(--success);
+        font-weight: 700;
+    }
+    
+    .bad-pattern {
+        color: var(--danger);
+        font-weight: 700;
+    }
+    
+    .neutral-pattern {
+        color: var(--info);
+        font-weight: 700;
+    }
+
+    /* Badges */
+    .stage-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--accent-dark) 100%);
+        color: var(--accent);
+        padding: 6px 14px;
+        border-radius: 25px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-right: 8px;
+        border: 1px solid var(--border-light);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        box-shadow: 0 4px 12px rgba(23, 210, 255, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .stage-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(23, 210, 255, 0.25);
+    }
+
+    /* Tabs and Sections */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 2px solid var(--border);
+        background: transparent;
+        padding-bottom: 0.5rem;
+    }
+    
+    .stTabs [role="tablist"] [role="tab"] {
+        background: rgba(26, 26, 46, 0.3);
+        border-color: transparent;
+        color: var(--text-secondary);
+        padding: 12px 24px;
+        font-weight: 600;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 8px 8px 0 0;
+        margin-right: 4px;
+    }
+    
+    .stTabs [role="tablist"] [role="tab"]:hover {
+        background: rgba(26, 26, 46, 0.6);
+        color: var(--accent);
+        border-color: transparent;
+    }
+    
+    .stTabs [role="tablist"] [role="tab"][aria-selected="true"] {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+        background: linear-gradient(135deg, rgba(23, 210, 255, 0.1) 0%, transparent 100%);
+        box-shadow: 0 0 15px rgba(23, 210, 255, 0.15);
+    }
+
+    /* Expanders */
+    .streamlit-expanderHeader {
+        background: linear-gradient(90deg, rgba(26, 26, 46, 0.5) 0%, rgba(37, 37, 74, 0.3) 100%);
+        border-radius: 10px;
+        padding: 14px 18px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: linear-gradient(90deg, rgba(37, 37, 74, 0.6) 0%, rgba(45, 45, 90, 0.4) 100%);
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(23, 210, 255, 0.1);
+    }
+
+    /* Code Blocks */
+    pre {
+        background: linear-gradient(135deg, rgba(10, 14, 39, 0.8) 0%, rgba(15, 52, 96, 0.3) 100%) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        padding: 18px !important;
+        color: var(--text-secondary) !important;
+        line-height: 1.6 !important;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    code {
+        color: var(--accent) !important;
+        font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--secondary) 0%, #c92a3d 100%);
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-weight: 700;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3), inset 0 -2px 6px rgba(0, 0, 0, 0.2);
+        font-size: 0.95rem;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(233, 69, 96, 0.4), inset 0 -2px 6px rgba(0, 0, 0, 0.2);
+        background: linear-gradient(135deg, #f55f7e 0%, #e94560 100%);
+    }
+    
+    .stButton > button:active {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(233, 69, 96, 0.3), inset 0 -1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Selectbox and Input */
+    .stSelectbox > div > div {
+        background: rgba(26, 26, 46, 0.6);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .stSelectbox > div > div:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 10px rgba(23, 210, 255, 0.15);
+    }
+    
+    .stTextInput > div > div > input {
+        background: rgba(26, 26, 46, 0.6) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        border-radius: 10px !important;
+        padding: 12px 15px !important;
+        transition: all 0.3s ease !important;
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 15px rgba(23, 210, 255, 0.2) !important;
+    }
+
+    /* Success, Warning, Error Messages */
+    .stSuccess {
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.12) 0%, transparent 100%);
+        border-left: 4px solid var(--success);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+    
+    .stWarning {
+        background: linear-gradient(135deg, rgba(243, 156, 18, 0.12) 0%, transparent 100%);
+        border-left: 4px solid var(--warning);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(243, 156, 18, 0.3);
+    }
+    
+    .stError {
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.12) 0%, transparent 100%);
+        border-left: 4px solid var(--danger);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+    
+    .stInfo {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.12) 0%, transparent 100%);
+        border-left: 4px solid var(--info);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(52, 152, 219, 0.3);
+    }
+
+    /* Section Headers */
+    .section-header {
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 1rem;
+        margin-bottom: 1.8rem;
+        color: var(--accent);
+        font-weight: 800;
+        font-size: 1.4rem;
+        letter-spacing: -0.3px;
+    }
+
+    /* Custom Divider */
+    .custom-divider {
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
+        margin: 2.5rem 0;
+    }
+
+    /* Sidebar Enhancements */
+    .stSidebar {
+        background: linear-gradient(180deg, rgba(10, 14, 39, 0.8) 0%, rgba(15, 52, 96, 0.5) 100%);
+    }
+    
+    .stSidebar [data-testid="stSidebarNav"] {
+        background: transparent;
+    }
+    
+    .stSidebar .stMarkdown {
+        color: var(--text-secondary);
+    }
+    
+    /* Text Styling */
+    h1 { color: var(--accent); font-weight: 800; }
+    h2 { color: var(--text-primary); font-weight: 700; }
+    h3 { color: var(--text-primary); font-weight: 700; }
+    p { color: var(--text-secondary); line-height: 1.6; }
+    
+    /* Smooth transitions */
+    * {
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
     .main-header .subtitle {
         color: #f39c12;
         font-size: 0.9rem;
@@ -467,10 +893,39 @@ def _render_eval_tab():
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.markdown("## ⚙️ Configuration")
+    # Sidebar Logo/Branding
+    st.markdown(
+        """
+        <style>
+        .sidebar-header {
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(23, 210, 255, 0.2);
+        }
+        .sidebar-header h2 {
+            margin: 0;
+            color: #17d9ff;
+            font-size: 1.5rem;
+        }
+        .sidebar-header p {
+            margin: 0.3rem 0 0;
+            color: #a8b2d8;
+            font-size: 0.85rem;
+        }
+        </style>
+        <div class='sidebar-header'>
+            <h2>⚡ CodeAid</h2>
+            <p>Configuration Panel</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown("## 🔧 Repository Source")
 
     input_mode = st.radio(
-        "Repository Source",
+        "Choose Source",
         ["🔗 GitHub URL", "📦 ZIP Upload"],
         index=0,
     )
@@ -645,12 +1100,27 @@ if "eval_results" not in st.session_state:
 
 # ── Main Content ─────────────────────────────────────────────────────────────
 
-# Render main header in the main content area
+# Get the path to the logo
+import base64
+
+logo_path = "static/logo.svg"
+if os.path.exists(logo_path):
+    with open(logo_path, "r") as f:
+        logo_svg = f.read()
+else:
+    logo_svg = ""
+
+# Render main header in the main content area with logo
 st.markdown(
     f"""<div class='main-header'>
-        <h1>🤖 CodeAid</h1>
-        <p>AI-Powered Repository Debugger & Auto-Repair Assistant</p>
-        <p class='subtitle'>🚀 Scan • 🔍 Analyze • 🔧 Fix • ✅ Verify</p>
+        <div class='logo-container'>
+            {logo_svg if logo_svg else '<div style="width: 85px; height: 85px; background: rgba(23, 210, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">🤖</div>'}
+            <div class='header-text'>
+                <h1>CodeAid</h1>
+                <p>AI-Powered Repository Debugger & Auto-Repair Assistant</p>
+                <p class='subtitle'>🚀 Scan • 🔍 Analyze • 🔧 Fix • ✅ Verify</p>
+            </div>
+        </div>
     </div>""",
     unsafe_allow_html=True,
 )

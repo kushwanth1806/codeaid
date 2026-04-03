@@ -1,0 +1,68 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradientBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#17d9ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f3460;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradientRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c92a3d;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#0a0e27" opacity="0.1"/>
+  
+  <!-- Main geometric shape - interconnected nodes -->
+  <g filter="url(#glow)">
+    <!-- Top node -->
+    <circle cx="256" cy="110" r="28" fill="url(#gradientBlue)" stroke="#17d9ff" stroke-width="2"/>
+    
+    <!-- Right top node -->
+    <circle cx="370" cy="160" r="28" fill="url(#gradientRed)" stroke="#e94560" stroke-width="2"/>
+    
+    <!-- Right bottom node -->
+    <circle cx="370" cy="320" r="28" fill="url(#gradientBlue)" stroke="#17d9ff" stroke-width="2"/>
+    
+    <!-- Bottom node -->
+    <circle cx="256" cy="402" r="28" fill="url(#gradientRed)" stroke="#e94560" stroke-width="2"/>
+    
+    <!-- Left bottom node -->
+    <circle cx="142" cy="320" r="28" fill="url(#gradientBlue)" stroke="#17d9ff" stroke-width="2"/>
+    
+    <!-- Left top node -->
+    <circle cx="142" cy="160" r="28" fill="url(#gradientRed)" stroke="#e94560" stroke-width="2"/>
+    
+    <!-- Center node -->
+    <circle cx="256" cy="256" r="32" fill="url(#gradientBlue)" stroke="#17d9ff" stroke-width="3"/>
+    
+    <!-- Connecting lines -->
+    <line x1="256" y1="138" x2="370" y2="188" stroke="url(#gradientBlue)" stroke-width="2.5" opacity="0.8"/>
+    <line x1="256" y1="138" x2="142" y2="188" stroke="url(#gradientRed)" stroke-width="2.5" opacity="0.8"/>
+    <line x1="370" y1="188" x2="370" y2="320" stroke="url(#gradientBlue)" stroke-width="2.5" opacity="0.8"/>
+    <line x1="142" y1="188" x2="142" y2="320" stroke="url(#gradientRed)" stroke-width="2.5" opacity="0.8"/>
+    <line x1="370" y1="320" x2="256" y2="402" stroke="url(#gradientBlue)" stroke-width="2.5" opacity="0.8"/>
+    <line x1="142" y1="320" x2="256" y2="402" stroke="url(#gradientRed)" stroke-width="2.5" opacity="0.8"/>
+    
+    <!-- Lines to center -->
+    <line x1="256" y1="256" x2="256" y2="138" stroke="url(#gradientBlue)" stroke-width="2" opacity="0.6"/>
+    <line x1="256" y1="256" x2="370" y2="160" stroke="url(#gradientRed)" stroke-width="2" opacity="0.6"/>
+    <line x1="256" y1="256" x2="370" y2="320" stroke="url(#gradientBlue)" stroke-width="2" opacity="0.6"/>
+    <line x1="256" y1="256" x2="256" y2="402" stroke="url(#gradientRed)" stroke-width="2" opacity="0.6"/>
+    <line x1="256" y1="256" x2="142" y2="320" stroke="url(#gradientBlue)" stroke-width="2" opacity="0.6"/>
+    <line x1="256" y1="256" x2="142" y2="160" stroke="url(#gradientRed)" stroke-width="2" opacity="0.6"/>
+  </g>
+  
+  <!-- Plus sign overlay (for code repair symbolism) -->
+  <g opacity="0.9">
+    <line x1="256" y1="220" x2="256" y2="292" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+    <line x1="224" y1="256" x2="288" y2="256" stroke="#17d9ff" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>
