@@ -29,7 +29,7 @@ from utils.codexglue_loader import run_evaluation
 
 st.set_page_config(
     page_title="CodeAid – AI Repository Debugger",
-    page_icon="🤖",
+    page_icon="▶",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -40,24 +40,17 @@ st.markdown(
     """
     <style>
     :root {
-        --primary: #0f3460;
-        --primary-light: #17a2b8;
-        --secondary: #e94560;
-        --secondary-light: #f55f7e;
-        --accent: #17d9ff;
-        --accent-dark: #0f88a0;
-        --success: #2ecc71;
-        --warning: #f39c12;
-        --danger: #e74c3c;
-        --info: #3498db;
-        --dark: #0a0e27;
-        --darker: #050710;
+        --primary: #1a1a2e;
+        --secondary: #d63447;
+        --accent: #00a8e8;
+        --success: #06d6a0;
+        --warning: #f77f00;
+        --danger: #d62828;
+        --info: #118ab2;
         --light: #f8f9fa;
-        --border: #2d2d44;
-        --border-light: #3d4d6a;
-        --text-primary: #e0e5f0;
-        --text-secondary: #a8b2d8;
-        --text-muted: #7a8199;
+        --border: #333340;
+        --text-primary: #e8e8e8;
+        --text-secondary: #a0a0a0;
     }
 
     * {
@@ -67,38 +60,19 @@ st.markdown(
     }
 
     body, html {
-        background: linear-gradient(135deg, #0a0e27 0%, #0d1225 50%, #0a0e27 100%);
+        background: #0f0f1e;
     }
 
-    /* Main Header with Premium Logo Integration */
+    /* Main Header - Clean and Minimal */
     .main-header {
-        background: linear-gradient(135deg, rgba(15, 52, 96, 0.3) 0%, rgba(10, 14, 39, 0.6) 50%, rgba(23, 210, 255, 0.05) 100%);
-        padding: 3.5rem 2.5rem;
-        border-radius: 20px;
-        margin-bottom: 3rem;
+        background: #1a1a2e;
+        padding: 2rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
         text-align: center;
-        border: 1px solid rgba(23, 210, 255, 0.15);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(23, 210, 255, 0.05);
+        border: 1px solid #333340;
         position: relative;
         overflow: hidden;
-        backdrop-filter: blur(10px);
-    }
-    
-    .main-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(23, 210, 255, 0.1) 0%, transparent 70%);
-        pointer-events: none;
-        animation: pulse 8s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 0.6; }
     }
     
     .logo-container {
@@ -106,24 +80,16 @@ st.markdown(
         align-items: center;
         justify-content: center;
         gap: 1.5rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         position: relative;
         z-index: 1;
     }
     
     .logo-image {
-        width: 85px;
-        height: 85px;
-        filter: drop-shadow(0 0 15px rgba(23, 210, 255, 0.3));
-        animation: float 3s ease-in-out infinite;
+        width: 70px;
+        height: 70px;
         object-fit: contain;
         image-rendering: high-quality;
-        image-rendering: crisp-edges;
-    }
-    
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
     }
     
     .header-text {
@@ -131,398 +97,296 @@ st.markdown(
     }
     
     .main-header h1 {
-        color: #17d9ff;
-        font-size: 2.8rem;
+        color: #ffffff;
+        font-size: 2.2rem;
         margin: 0;
-        font-weight: 800;
-        letter-spacing: -0.5px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
         position: relative;
         z-index: 1;
-        text-shadow: 0 0 20px rgba(23, 210, 255, 0.3);
-        background: linear-gradient(135deg, #17d9ff 0%, #e94560 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
     }
     
     .main-header p {
         color: var(--text-secondary);
-        font-size: 1.05rem;
-        margin: 0.7rem 0 0;
+        font-size: 1rem;
+        margin: 0.5rem 0 0;
         position: relative;
         z-index: 1;
         font-weight: 400;
-        letter-spacing: 0.3px;
     }
     
     .main-header .subtitle {
         color: var(--accent);
-        font-size: 0.95rem;
-        margin-top: 0.8rem;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
         position: relative;
         z-index: 1;
-        font-weight: 600;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        opacity: 0.9;
+        font-weight: 500;
     }
 
     /* Metric Cards */
     .metric-card {
-        background: linear-gradient(135deg, rgba(30, 30, 46, 0.6) 0%, rgba(37, 37, 74, 0.4) 100%);
-        border: 1px solid var(--border);
-        border-radius: 15px;
-        padding: 1.8rem;
+        background: #1a1a2e;
+        border: 1px solid #333340;
+        border-radius: 8px;
+        padding: 1.5rem;
         text-align: center;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(23, 210, 255, 0.02);
-        backdrop-filter: blur(5px);
+        transition: all 0.2s ease;
     }
     
     .metric-card:hover {
         border-color: var(--accent);
-        box-shadow: 0 12px 30px rgba(23, 210, 255, 0.2), inset 0 0 20px rgba(23, 210, 255, 0.05);
-        transform: translateY(-5px);
-        background: linear-gradient(135deg, rgba(30, 30, 46, 0.8) 0%, rgba(37, 37, 74, 0.6) 100%);
+        background: #222235;
     }
     
     .metric-card .value {
-        font-size: 2.8rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--accent);
         display: block;
         margin-bottom: 0.5rem;
     }
     
     .metric-card .label {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: var(--text-secondary);
         margin-top: 0.5rem;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
-        font-weight: 600;
+        letter-spacing: 1px;
+        font-weight: 500;
     }
 
     /* Issue Cards */
     .issue-card {
-        border-left: 5px solid var(--secondary);
-        background: linear-gradient(90deg, rgba(233, 69, 96, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
-        padding: 1.2rem 1.5rem;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid var(--border);
-        backdrop-filter: blur(5px);
+        border-left: 3px solid var(--secondary);
+        background: #1a1a2e;
+        padding: 1rem 1.2rem;
+        border-radius: 6px;
+        margin-bottom: 0.8rem;
+        transition: all 0.2s ease;
+        border: 1px solid #333340;
     }
     
     .issue-card:hover {
-        background: linear-gradient(90deg, rgba(233, 69, 96, 0.1) 0%, rgba(26, 26, 46, 0.7) 25%);
-        transform: translateX(6px);
-        border-color: var(--secondary);
-        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.15);
+        background: #222235;
+        border-color: #444450;
     }
     
     .issue-card.warning {
         border-left-color: var(--warning);
-        background: linear-gradient(90deg, rgba(243, 156, 18, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
-    }
-    
-    .issue-card.warning:hover {
-        border-color: var(--warning);
-        box-shadow: 0 6px 20px rgba(243, 156, 18, 0.15);
     }
     
     .issue-card.info {
         border-left-color: var(--info);
-        background: linear-gradient(90deg, rgba(52, 152, 219, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
-    }
-    
-    .issue-card.info:hover {
-        border-color: var(--info);
-        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
     }
     
     .issue-card.success {
         border-left-color: var(--success);
-        background: linear-gradient(90deg, rgba(46, 204, 113, 0.06) 0%, rgba(26, 26, 46, 0.5) 25%);
-    }
-    
-    .issue-card.success:hover {
-        border-color: var(--success);
-        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.15);
     }
 
     /* Progress Bar */
     .health-bar-container {
-        background: var(--border);
-        border-radius: 25px;
-        height: 28px;
+        background: #333340;
+        border-radius: 12px;
+        height: 24px;
         overflow: hidden;
-        border: 1px solid var(--border-light);
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid #444450;
     }
     
     .health-bar {
-        border-radius: 25px;
-        height: 28px;
-        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        background: linear-gradient(90deg, var(--success) 0%, var(--warning) 50%, var(--danger) 100%);
-        box-shadow: 0 0 15px rgba(46, 204, 113, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        height: 24px;
+        transition: width 0.6s ease;
+        background: linear-gradient(90deg, #06d6a0 0%, #f77f00 50%, #d62828 100%);
     }
 
     /* Info Cards */
     .tip-card {
-        background: linear-gradient(135deg, rgba(13, 33, 55, 0.5) 0%, rgba(26, 58, 82, 0.3) 100%);
-        border: 1px solid var(--border-light);
-        border-radius: 12px;
-        padding: 1.2rem;
-        margin-bottom: 1rem;
+        background: #1a1a2e;
+        border: 1px solid #333340;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
         color: var(--text-secondary);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(5px);
+        transition: all 0.2s ease;
     }
     
     .tip-card:hover {
         border-color: var(--info);
-        background: linear-gradient(135deg, rgba(13, 33, 55, 0.7) 0%, rgba(26, 58, 82, 0.5) 100%);
-        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+        background: #222235;
     }
 
     /* Status Indicators */
-    .good-pattern {
-        color: var(--success);
-        font-weight: 700;
-    }
-    
-    .bad-pattern {
-        color: var(--danger);
-        font-weight: 700;
-    }
-    
-    .neutral-pattern {
-        color: var(--info);
-        font-weight: 700;
-    }
+    .good-pattern { color: var(--success); font-weight: 600; }
+    .bad-pattern { color: var(--danger); font-weight: 600; }
+    .neutral-pattern { color: var(--info); font-weight: 600; }
 
     /* Badges */
     .stage-badge {
         display: inline-block;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--accent-dark) 100%);
+        background: #222235;
         color: var(--accent);
-        padding: 6px 14px;
-        border-radius: 25px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        margin-right: 8px;
-        border: 1px solid var(--border-light);
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-right: 6px;
+        border: 1px solid #333340;
         text-transform: uppercase;
-        letter-spacing: 0.7px;
-        box-shadow: 0 4px 12px rgba(23, 210, 255, 0.15);
-        transition: all 0.3s ease;
-    }
-    
-    .stage-badge:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(23, 210, 255, 0.25);
+        letter-spacing: 0.5px;
     }
 
     /* Tabs and Sections */
     .stTabs [data-baseweb="tab-list"] {
-        border-bottom: 2px solid var(--border);
+        border-bottom: 1px solid #333340;
         background: transparent;
-        padding-bottom: 0.5rem;
     }
     
     .stTabs [role="tablist"] [role="tab"] {
-        background: rgba(26, 26, 46, 0.3);
+        background: transparent;
         border-color: transparent;
         color: var(--text-secondary);
-        padding: 12px 24px;
-        font-weight: 600;
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: 8px 8px 0 0;
-        margin-right: 4px;
+        padding: 10px 16px;
+        font-weight: 500;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
     }
     
     .stTabs [role="tablist"] [role="tab"]:hover {
-        background: rgba(26, 26, 46, 0.6);
         color: var(--accent);
-        border-color: transparent;
     }
     
     .stTabs [role="tablist"] [role="tab"][aria-selected="true"] {
         color: var(--accent);
         border-bottom-color: var(--accent);
-        background: linear-gradient(135deg, rgba(23, 210, 255, 0.1) 0%, transparent 100%);
-        box-shadow: 0 0 15px rgba(23, 210, 255, 0.15);
     }
 
     /* Expanders */
     .streamlit-expanderHeader {
-        background: linear-gradient(90deg, rgba(26, 26, 46, 0.5) 0%, rgba(37, 37, 74, 0.3) 100%);
-        border-radius: 10px;
-        padding: 14px 18px;
-        border: 1px solid var(--border);
-        transition: all 0.3s ease;
-        backdrop-filter: blur(5px);
+        background: #1a1a2e;
+        border-radius: 6px;
+        padding: 12px 14px;
+        border: 1px solid #333340;
+        transition: all 0.2s ease;
     }
     
     .streamlit-expanderHeader:hover {
-        background: linear-gradient(90deg, rgba(37, 37, 74, 0.6) 0%, rgba(45, 45, 90, 0.4) 100%);
-        border-color: var(--accent);
-        box-shadow: 0 4px 12px rgba(23, 210, 255, 0.1);
+        background: #222235;
+        border-color: #444450;
     }
 
     /* Code Blocks */
     pre {
-        background: linear-gradient(135deg, rgba(10, 14, 39, 0.8) 0%, rgba(15, 52, 96, 0.3) 100%) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        padding: 18px !important;
+        background: #0f0f1e !important;
+        border: 1px solid #333340 !important;
+        border-radius: 6px !important;
+        padding: 14px !important;
         color: var(--text-secondary) !important;
-        line-height: 1.6 !important;
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        line-height: 1.5 !important;
     }
     
     code {
         color: var(--accent) !important;
-        font-family: 'JetBrains Mono', 'Courier New', monospace !important;
-        font-size: 0.9rem !important;
+        font-family: 'Monaco', 'Courier New', monospace !important;
+        font-size: 0.85rem !important;
     }
 
     /* Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, var(--secondary) 0%, #c92a3d 100%);
+        background: var(--secondary);
         color: white;
         border: none;
-        padding: 12px 28px;
-        border-radius: 10px;
-        font-weight: 700;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.2s ease;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
-        box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3), inset 0 -2px 6px rgba(0, 0, 0, 0.2);
-        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
     }
     
     .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(233, 69, 96, 0.4), inset 0 -2px 6px rgba(0, 0, 0, 0.2);
-        background: linear-gradient(135deg, #f55f7e 0%, #e94560 100%);
+        background: #e8475c;
     }
     
     .stButton > button:active {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 15px rgba(233, 69, 96, 0.3), inset 0 -1px 3px rgba(0, 0, 0, 0.2);
+        background: #c91e37;
     }
 
-    /* Selectbox and Input */
+    /* Inputs */
     .stSelectbox > div > div {
-        background: rgba(26, 26, 46, 0.6);
-        border: 1px solid var(--border);
+        background: #1a1a2e;
+        border: 1px solid #333340;
         color: var(--text-secondary);
-        border-radius: 10px;
-        transition: all 0.3s ease;
+        border-radius: 6px;
+        transition: all 0.2s ease;
     }
     
     .stSelectbox > div > div:hover {
         border-color: var(--accent);
-        box-shadow: 0 0 10px rgba(23, 210, 255, 0.15);
     }
     
     .stTextInput > div > div > input {
-        background: rgba(26, 26, 46, 0.6) !important;
-        border: 1px solid var(--border) !important;
+        background: #1a1a2e !important;
+        border: 1px solid #333340 !important;
         color: var(--text-secondary) !important;
-        border-radius: 10px !important;
-        padding: 12px 15px !important;
-        transition: all 0.3s ease !important;
-        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        border-radius: 6px !important;
+        padding: 10px 12px !important;
+        transition: all 0.2s ease !important;
     }
     
     .stTextInput > div > div > input:focus {
         border-color: var(--accent) !important;
-        box-shadow: 0 0 15px rgba(23, 210, 255, 0.2) !important;
     }
 
-    /* Success, Warning, Error Messages */
+    /* Messages */
     .stSuccess {
-        background: linear-gradient(135deg, rgba(46, 204, 113, 0.12) 0%, transparent 100%);
-        border-left: 4px solid var(--success);
+        background: rgba(6, 214, 160, 0.1);
+        border-left: 3px solid var(--success);
         padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 4px;
+        border: 1px solid rgba(6, 214, 160, 0.2);
     }
     
     .stWarning {
-        background: linear-gradient(135deg, rgba(243, 156, 18, 0.12) 0%, transparent 100%);
-        border-left: 4px solid var(--warning);
+        background: rgba(247, 127, 0, 0.1);
+        border-left: 3px solid var(--warning);
         padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid rgba(243, 156, 18, 0.3);
+        border-radius: 4px;
+        border: 1px solid rgba(247, 127, 0, 0.2);
     }
     
     .stError {
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.12) 0%, transparent 100%);
-        border-left: 4px solid var(--danger);
+        background: rgba(214, 40, 40, 0.1);
+        border-left: 3px solid var(--danger);
         padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid rgba(231, 76, 60, 0.3);
+        border-radius: 4px;
+        border: 1px solid rgba(214, 40, 40, 0.2);
     }
     
     .stInfo {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.12) 0%, transparent 100%);
-        border-left: 4px solid var(--info);
+        background: rgba(17, 138, 178, 0.1);
+        border-left: 3px solid var(--info);
         padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid rgba(52, 152, 219, 0.3);
+        border-radius: 4px;
+        border: 1px solid rgba(17, 138, 178, 0.2);
     }
 
     /* Section Headers */
     .section-header {
-        border-bottom: 2px solid var(--border);
-        padding-bottom: 1rem;
-        margin-bottom: 1.8rem;
-        color: var(--accent);
-        font-weight: 800;
-        font-size: 1.4rem;
-        letter-spacing: -0.3px;
+        border-bottom: 1px solid #333340;
+        padding-bottom: 0.8rem;
+        margin-bottom: 1.2rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.2rem;
     }
 
-    /* Custom Divider */
-    .custom-divider {
-        height: 2px;
-        background: linear-gradient(90deg, transparent, var(--border), transparent);
-        margin: 2.5rem 0;
-    }
-
-    /* Sidebar Enhancements */
-    .stSidebar {
-        background: linear-gradient(180deg, rgba(10, 14, 39, 0.8) 0%, rgba(15, 52, 96, 0.5) 100%);
-    }
-    
-    .stSidebar [data-testid="stSidebarNav"] {
-        background: transparent;
-    }
-    
-    .stSidebar .stMarkdown {
-        color: var(--text-secondary);
-    }
-    
-    /* Text Styling */
-    h1 { color: var(--accent); font-weight: 800; }
-    h2 { color: var(--text-primary); font-weight: 700; }
-    h3 { color: var(--text-primary); font-weight: 700; }
-    p { color: var(--text-secondary); line-height: 1.6; }
-    
-    /* Smooth transitions */
-    * {
-        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    }
+    /* Typography */
+    h1 { color: var(--text-primary); font-weight: 700; }
+    h2 { color: var(--text-primary); font-weight: 600; }
+    h3 { color: var(--text-primary); font-weight: 600; }
+    p { color: var(--text-secondary); line-height: 1.5; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -673,18 +537,18 @@ with st.sidebar:
         }
         </style>
         <div class='sidebar-header'>
-            <h2>⚡ CodeAid</h2>
+            <h2>CodeAid</h2>
             <p>Configuration Panel</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
     
-    st.markdown("## 🔧 Repository Source")
+    st.markdown("## Configuration")
 
     input_mode = st.radio(
         "Choose Source",
-        ["🔗 GitHub URL", "📦 ZIP Upload"],
+        ["GitHub URL", "ZIP Upload"],
         index=0,
     )
 
@@ -692,14 +556,14 @@ with st.sidebar:
     zip_path = ""
     is_zip = False
 
-    if input_mode == "🔗 GitHub URL":
+    if input_mode == "GitHub URL":
         github_url = st.text_input(
             "GitHub Repository URL",
             placeholder="https://github.com/username/repo",
             help="Public GitHub repository URL",
         )
     else:
-        st.markdown("#### 📦 Upload Project Files")
+        st.markdown("#### Upload Files")
         st.caption(
             "**Option 1:** Upload a single ZIP file containing your entire project folder\n\n"
             "**Option 2:** Select multiple Python files from your project (preserves folder structure)"
@@ -745,10 +609,10 @@ with st.sidebar:
                 zip_path = tmp_zip.name
                 is_zip = True
             
-            st.success(f"✅ Loaded {len(uploaded_files)} file(s)")
+            st.success(f"Loaded {len(uploaded_files)} file(s)")
 
     st.markdown("---")
-    st.markdown("### 🤖 LLM Settings")
+    st.markdown("### LLM Settings")
 
     # Provider selection
     llm_provider = st.selectbox(
@@ -787,21 +651,21 @@ with st.sidebar:
         help="Uses LLM for deeper architectural analysis",
     )
 
-    llm_status = "✅ Available" if is_llm_available() else "⚠️ Not configured"
+    llm_status = "Available" if is_llm_available() else "Not configured"
     st.caption(f"LLM Status: {llm_status} ({llm_provider})")
 
     st.markdown("---")
     
     # Network connectivity check (for GitHub URL mode)
-    if input_mode == "🔗 GitHub URL":
-        if st.button("🌐 Check GitHub Connectivity", use_container_width=True):
+    if input_mode == "GitHub URL":
+        if st.button("Check GitHub Connectivity", use_container_width=True):
             import socket
             try:
                 socket.create_connection(("github.com", 443), timeout=3)
-                st.success("✅ GitHub is reachable")
+                st.success("GitHub is reachable")
             except (socket.timeout, socket.gaierror, ConnectionRefusedError):
                 st.error(
-                    "❌ Cannot reach GitHub\n\n"
+                    "Cannot reach GitHub\n\n"
                     "Solutions:\n"
                     "• Check your internet connection\n"
                     "• Try using a ZIP file instead\n"
@@ -809,21 +673,21 @@ with st.sidebar:
                 )
 
     st.markdown("---")
-    analyze_btn = st.button("🚀 Run Analysis", type="primary", use_container_width=True)
+    analyze_btn = st.button("Run Analysis", type="primary", use_container_width=True)
 
     st.markdown("---")
-    eval_btn = st.button("📊 Run CodeXGLUE Eval", use_container_width=True)
+    eval_btn = st.button("Run CodeXGLUE Eval", use_container_width=True)
 
     st.markdown("---")
     st.markdown(
         """
         **Pipeline Stages**
-        1. 📥 Load Repository
-        2. 🔬 AST Scan
-        3. 🔧 Auto-Repair
-        4. ✅ Verify
-        5. 💡 Explain
-        6. 🏗️ Understand
+        1. Load Repository
+        2. AST Scan
+        3. Auto-Repair
+        4. Verify
+        5. Explain
+        6. Project Understanding
         """
     )
 
@@ -889,7 +753,7 @@ st.markdown(
             <div class='header-text'>
                 <h1>CodeAid</h1>
                 <p>AI-Powered Repository Debugger & Auto-Repair Assistant</p>
-                <p class='subtitle'>🚀 Scan • 🔍 Analyze • 🔧 Fix • ✅ Verify</p>
+                <p class='subtitle'>Scan • Analyze • Fix • Verify</p>
             </div>
         </div>
     </div>""",
@@ -908,7 +772,7 @@ if analyze_btn:
 
         def update_progress(stage: str, pct: float):
             progress_bar.progress(pct)
-            status_text.markdown(f"⚡ **{stage}**")
+            status_text.markdown(f"**{stage}**")
 
         with st.spinner("Running CodeAid pipeline…"):
             try:
@@ -920,7 +784,7 @@ if analyze_btn:
                 )
                 st.session_state.pipeline_results = results
                 progress_bar.progress(1.0)
-                status_text.success("✅ Analysis complete!")
+                status_text.success("Analysis complete!")
             except Exception as e:
                 st.error(f"Pipeline error: {e}")
                 st.code(traceback.format_exc())
@@ -950,18 +814,18 @@ if results:
             
             # Check for network-related errors
             if "network" in error_text.lower() or "could not resolve" in error_text.lower():
-                st.error(f"🌐 **Network Error**\n\n{error_text}")
+                st.error(f"**Network Error**\n\n{error_text}")
                 st.info(
-                    "💡 **Troubleshooting Tips:**\n\n"
+                    "**Troubleshooting Tips:**\n\n"
                     "1. **Check Internet Connection**: Ensure you have internet access\n"
                     "2. **Use ZIP Instead**: Download the repo as ZIP and upload it\n"
                     "3. **Check Firewall**: Your network may be blocking GitHub\n"
                     "4. **Try Again**: Temporary network issues can occur"
                 )
             elif "not found" in error_text.lower() or "authentication" in error_text.lower():
-                st.error(f"🔐 **Repository Error**\n\n{error_text}")
+                st.error(f"**Repository Error**\n\n{error_text}")
                 st.info(
-                    "💡 **Try These:**\n\n"
+                    "**Try These:**\n\n"
                     "1. Verify the GitHub URL is correct\n"
                     "2. Ensure the repository is public\n"
                     "3. Upload a ZIP file instead"
@@ -970,18 +834,18 @@ if results:
                 st.error(error_text)
 
     tabs = st.tabs([
-        "📊 Overview",
-        "🔬 Issues",
-        "🔧 Repairs",
-        "✅ Verification",
-        "🏗️ Project Understanding",
-        "📈 CodeXGLUE Eval",
-        "⏱️ Timings",
+        "Overview",
+        "Issues",
+        "Repairs",
+        "Verification",
+        "Project Understanding",
+        "CodeXGLUE Eval",
+        "Timings",
     ])
 
     # ── Tab 0: Overview ───────────────────────────────────────────────────────
     with tabs[0]:
-        st.markdown("## 📊 Analysis Overview")
+        st.markdown("## Analysis Overview")
 
         load_stage = results["stages"].get("load", {})
         scan_summary = results["stages"].get("scan", {}).get("summary", {})
@@ -1051,7 +915,7 @@ if results:
                     {
                         "File": r.get("relative_path", "unknown"),
                         "Issues": len(r.get("issues", [])),
-                        "Parsed": "✅",  # If we have issues, parsing succeeded
+                        "Parsed": "✓",  # If we have issues, parsing succeeded
                     }
                     for r in explained_results
                 ]
@@ -1067,7 +931,7 @@ if results:
         all_issues = get_all_issues_flat(results)
 
         if not all_issues:
-            st.success("🎉 No issues detected in this repository!")
+            st.success("No issues detected in this repository!")
         else:
             # Filters
             col_f1, col_f2, col_f3 = st.columns(3)
@@ -1113,17 +977,17 @@ if results:
                     col_a, col_b = st.columns([1, 1])
                     with col_a:
                         st.markdown(f"**Message:** {issue.get('message', '')}")
-                        st.markdown(f"**Fixable:** {'✅ Yes' if issue.get('fixable') else '❌ No'}")
+                        st.markdown(f"**Fixable:** {'Yes' if issue.get('fixable') else 'No'}")
                         if issue.get("snippet"):
                             st.code(issue["snippet"], language="python")
                     with col_b:
                         st.markdown(f"**Summary:** {issue.get('summary', '')}")
                         st.markdown(f"**Impact:** {issue.get('impact', '')}")
-                        st.info(f"💡 **Tip:** {issue.get('tip', '')}")
+                        st.info(f"**Tip:** {issue.get('tip', '')}")
 
     # ── Tab 2: Repairs ────────────────────────────────────────────────────────
     with tabs[2]:
-        st.markdown("## 🔧 Automatic Repairs")
+        st.markdown("## Automatic Repairs")
 
         repair_results = results["stages"].get("repair", {}).get("results", [])
         repair_summary = results["stages"].get("repair", {}).get("summary", {})
@@ -1140,22 +1004,22 @@ if results:
         
         # Show fixed repairs
         if fixed_repairs:
-            st.markdown("### ✅ Successful Repairs")
+            st.markdown("### Successful Repairs")
             repairs_by_file = defaultdict(list)
             for repair in fixed_repairs:
                 file_path = repair.get("relative_path", repair.get("file", "unknown"))
                 repairs_by_file[file_path].append(repair)
             
             for file_path, file_repairs in sorted(repairs_by_file.items()):
-                with st.expander(f"🔧 {file_path} ({len(file_repairs)} fixed)"):
+                with st.expander(f"{file_path} ({len(file_repairs)} fixed)"):
                     for repair in file_repairs:
-                        st.success(f"✅ {repair.get('detail', 'Issue fixed')}")
+                        st.success(f"{repair.get('detail', 'Issue fixed')}")
         else:
             st.info("No automatic repairs were applied.")
         
         # Show skipped repairs (not auto-fixable)
         if skipped_repairs:
-            st.markdown("### ⏭️ Skipped (Not Auto-Fixable)")
+            st.markdown("### Skipped (Not Auto-Fixable)")
             st.info(
                 "These issues were detected but cannot be automatically fixed. "
                 "Here's the corrected code you can manually copy and paste:"
@@ -1168,7 +1032,7 @@ if results:
                 skipped_by_reason[reason].append(skip)
             
             for reason, items in sorted(skipped_by_reason.items()):
-                with st.expander(f"⏭️ {reason} ({len(items)} issues)"):
+                with st.expander(f"{reason} ({len(items)} issues)"):
                     for item in items:
                         issue_type = item.get("issue_type", "unknown")
                         file_path = item.get("relative_path", item.get("file", "unknown"))
@@ -1178,7 +1042,7 @@ if results:
                         
                         # Show corrected code suggestions
                         corrected_code = get_corrected_code_suggestion(item)
-                        st.markdown("**📋 Suggested Fix (Copy & Paste):**")
+                        st.markdown("**Suggested Fix (Copy & Paste):**")
                         st.code(corrected_code, language="python" if ".py" in file_path else "javascript")
                         
                         # Add a separator between items
@@ -1186,7 +1050,7 @@ if results:
         
         # Show failed repairs
         if failed_repairs:
-            st.markdown("### ❌ Failed Repairs")
+            st.markdown("### Failed Repairs")
             for fail in failed_repairs:
                 issue_type = fail.get("issue_type", "unknown")
                 file_path = fail.get("relative_path", fail.get("file", "unknown"))
@@ -1196,16 +1060,16 @@ if results:
 
     # ── Tab 3: Verification ───────────────────────────────────────────────────
     with tabs[3]:
-        st.markdown("## ✅ Repair Verification")
+        st.markdown("## Repair Verification")
 
         verify_results = results["stages"].get("verify", {}).get("results", [])
         verify_summary = results["stages"].get("verify", {}).get("summary", {})
 
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Total Files", verify_summary.get("total_files", 0))
-        col2.metric("✅ Passed", verify_summary.get("passed", 0))
-        col3.metric("❌ Failed", verify_summary.get("failed", 0))
-        col4.metric("⚠️ Regressions", verify_summary.get("regressions", 0))
+        col2.metric("Passed", verify_summary.get("passed", 0))
+        col3.metric("Failed", verify_summary.get("failed", 0))
+        col4.metric("Regressions", verify_summary.get("regressions", 0))
 
         changed_verifs = [v for v in verify_results if v.get("changed")]
         if changed_verifs:
