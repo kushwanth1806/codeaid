@@ -116,6 +116,9 @@ st.markdown(
         height: 85px;
         filter: drop-shadow(0 0 15px rgba(23, 210, 255, 0.3));
         animation: float 3s ease-in-out infinite;
+        object-fit: contain;
+        image-rendering: high-quality;
+        image-rendering: crisp-edges;
     }
     
     @keyframes float {
@@ -858,18 +861,31 @@ if "eval_results" not in st.session_state:
 # Get the path to the logo
 import base64
 
-logo_path = "static/logo.svg"
-if os.path.exists(logo_path):
-    with open(logo_path, "r") as f:
+# Try PNG first (professional logo), then SVG
+logo_png_path = "static/logo.png"
+logo_svg_path = "static/logo.svg"
+
+logo_html = ""
+
+if os.path.exists(logo_png_path):
+    # Use PNG logo with base64 encoding for better compatibility
+    with open(logo_png_path, "rb") as f:
+        logo_data = base64.b64encode(f.read()).decode()
+    logo_html = f'<img src="data:image/png;base64,{logo_data}" class="logo-image" alt="CodeAid Logo" />'
+elif os.path.exists(logo_svg_path):
+    # Fallback to SVG
+    with open(logo_svg_path, "r") as f:
         logo_svg = f.read()
+    logo_html = logo_svg
 else:
-    logo_svg = ""
+    # Ultimate fallback
+    logo_html = '<div style="width: 85px; height: 85px; background: linear-gradient(135deg, #17d9ff 0%, #e94560 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; color: white; box-shadow: 0 0 20px rgba(23, 210, 255, 0.3);">CA</div>'
 
 # Render main header in the main content area with logo
 st.markdown(
     f"""<div class='main-header'>
         <div class='logo-container'>
-            {logo_svg if logo_svg else '<div style="width: 85px; height: 85px; background: rgba(23, 210, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">🤖</div>'}
+            {logo_html}
             <div class='header-text'>
                 <h1>CodeAid</h1>
                 <p>AI-Powered Repository Debugger & Auto-Repair Assistant</p>
