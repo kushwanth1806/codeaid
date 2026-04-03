@@ -106,11 +106,12 @@ def explain_scan_results(issues: List[Dict]) -> List[Dict]:
     # First, add explanations to all issues
     explained = explain_issues(issues)
     
-    # Group by file
+    # Group by file (using relative_path if available for display)
     from collections import defaultdict
     grouped = defaultdict(list)
     for issue in explained:
-        path = issue.get("file", "unknown")
+        # Use relative_path if available (enriched from coordinator), else file
+        path = issue.get("relative_path", issue.get("file", "unknown"))
         grouped[path].append(issue)
     
     # Return as list of file results

@@ -6,6 +6,7 @@ Manages agent interactions and aggregates all results.
 """
 
 import time
+import logging
 from typing import Callable, Dict, List, Optional, Tuple, BinaryIO
 
 from core.repo_loader import load_repository, cleanup_repo
@@ -16,6 +17,48 @@ from core.agents.explain import explain_scan_results
 from core.agents.project_understanding import analyze_project, build_project_summary_text
 from core.agents.export import export_repaired_project
 from core.agents import llm_agent
+from core.data_validation import (
+    normalize_scan_results,
+    normalize_repair_results,
+    enrich_issues_for_ui,
+)
+from pathlib import Path
+
+# Setup debug logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+def _enrich_with_relative_path(results: List[Dict], repo_path: str) -> List[Dict]:
+    """
+    Add 'relative_path' field to results based on 'file' path and repo_path.
+    
+    Args:
+        results: List of result dicts with 'file' key
+        repo_path: Base repository path
+        
+    Returns:
+        List of results with added 'relative_path' field
+    """
+    enriched = []
+    repo_path_obj = Path(repo_path)
+    
+    for result in results:
+        result_copy = result.copy()
+        if "file" in result and "relative_path" not in result_copy:
+            try:
+                file_path = Path(result["file"])
+                relative = file_path.relative_to(repo_path_obj)
+                result_copy["relative_path"] = str(relative)
+            except (ValueError, TypeError):
+                # If can't compute relative path, use the file path as-is
+                result_copy["relative_path"] = result.get("file", "unknown")
+        elif "relative_path" not in result_copy:
+            result_copy["relative_path"] = result.get("file", "unknown")
+        
+        enriched.append(result_copy)
+    
+    return enriched
 
 
 def run_pipeline(
@@ -84,8 +127,25 @@ def run_pipeline(
         # Use all source files to support multi-language scanning
         source_files = repo_data.get("all_source_files", repo_data["python_files"])
         scan_results = scan_repository(source_files)
+        logger.debug(f"[STAGE 2] Scanner found {len(scan_results)} raw issues")
+        
+        # Normalize and enrich issues for UI display
+        scan_results = normalize_scan_results(scan_results)
+        logger.debug(f"[STAGE 2] After normalization: {len(scan_results)} issues")
+        
+        # Log issue types and fixability
+        fixable_count = sum(1 for issue in scan_results if issue.get("fixable"))
+        non_fixable_count = len(scan_results) - fixable_count
+        logger.debug(f"[STAGE 2] Issue breakdown - Fixable: {fixable_count}, Non-fixable: {non_fixable_count}")
+        
+        for issue in scan_results[:5]:  # Log first 5 for debug
+            logger.debug(f"  • {issue.get('issue_type')} at {issue.get('relative_path')}:{issue.get('line')} "
+                        f"(fixable={issue.get('fixable')})")
+        
+        scan_results = _enrich_with_relative_path(scan_results, repo_data["repo_path"])
         scan_summary = summarize_scan(scan_results)
     except Exception as e:
+        logger.error(f"[STAGE 2] Scanning failed: {e}", exc_info=True)
         results["errors"].append(f"Scanning failed: {e}")
         cleanup_repo(repo_data["temp_dir"])
         return results
@@ -103,10 +163,36 @@ def run_pipeline(
     try:
         # Use all source files for multi-language repair
         source_files = repo_data.get("all_source_files", repo_data["python_files"])
+        logger.debug(f"[STAGE 3] Passing {len(scan_results)} issues to repair agent")
+        
         repair_results = repair_repository(source_files, scan_results)
+        logger.debug(f"[STAGE 3] Repair agent returned {len(repair_results)} results")
+        
+        # Log repair outcomes
+        fixed_count = sum(1 for result in repair_results if result.get("status") == "fixed")
+        skipped_count = sum(1 for result in repair_results if result.get("status") == "skipped")
+        failed_count = sum(1 for result in repair_results if result.get("status") == "failed")
+        logger.debug(f"[STAGE 3] Repair breakdown - Fixed: {fixed_count}, Skipped: {skipped_count}, Failed: {failed_count}")
+        
+        # Log why issues were skipped
+        skipped_reasons = {}
+        for result in repair_results:
+            if result.get("status") == "skipped":
+                reason = result.get("detail", "unknown")
+                skipped_reasons[reason] = skipped_reasons.get(reason, 0) + 1
+        
+        for reason, count in skipped_reasons.items():
+            logger.debug(f"  • Skipped ({count}): {reason}")
+        
+        # Normalize and enrich repair results for UI display
+        repair_results = normalize_repair_results(repair_results)
+        repair_results = _enrich_with_relative_path(repair_results, repo_data["repo_path"])
         repo_data["all_source_files"] = source_files  # Update with repaired files
         repair_summary = summarize_repairs(repair_results)
+        logger.debug(f"[STAGE 3] Summary - Files changed: {repair_summary.get('files_changed')}, "
+                    f"Total repairs: {repair_summary.get('total_repairs')}")
     except Exception as e:
+        logger.error(f"[STAGE 3] Repair failed: {e}", exc_info=True)
         results["errors"].append(f"Repair failed: {e}")
         repair_results = []
         repair_summary = {"files_changed": 0, "total_repairs": 0, "details": []}
@@ -207,7 +293,7 @@ def export_pipeline_results(
     repairs = pipeline_results.get("stages", {}).get("repair", {}).get("results", [])
     
     return export_repaired_project(
-        repo_path="",  # We have the files already
+
         files=files,
         issues=issues,
         repairs_applied=repairs,

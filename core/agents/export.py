@@ -16,7 +16,6 @@ from datetime import datetime
 
 
 def export_repaired_project(
-    repo_path: str,
     files: List[Dict],
     issues: List[Dict],
     repairs_applied: List[Dict],
@@ -27,8 +26,6 @@ def export_repaired_project(
     
     Parameters
     ----------
-    repo_path : str
-        Path to original repository
     files : List[Dict]
         Current (repaired) files with {"path": str, "source": str}
     issues : List[Dict]
@@ -45,13 +42,12 @@ def export_repaired_project(
         filename: suggested filename for download
     """
     if export_format == "zip":
-        return _create_zip_export(repo_path, files, issues, repairs_applied)
+        return _create_zip_export(files, issues, repairs_applied)
     else:
         raise ValueError(f"Unsupported export format: {export_format}")
 
 
 def _create_zip_export(
-    repo_path: str,
     files: List[Dict],
     issues: List[Dict],
     repairs_applied: List[Dict]

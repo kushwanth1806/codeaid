@@ -160,13 +160,13 @@ def _check_long_functions(path: str, source: str, language: str = "unknown") -> 
         "php": r"^\s*(public|private|protected)?\s*function\s+(\w+)\s*\(",
     }
     
-    pattern_str = patterns.get(language.lower(), patterns.get("python"))
+    # FIX: Use explicit fallback string instead of nested .get() with potential None
+    pattern_str = patterns.get(language.lower()) or patterns.get("python") or r"^\s*(def|async def)\s+(\w+)\s*\("
     pattern = re.compile(pattern_str, re.MULTILINE)
     
     lines = source.splitlines()
     in_function = False
     func_start = 0
-    func_name = ""
     indent_level = None
     
     for lineno, line in enumerate(lines):
@@ -174,7 +174,7 @@ def _check_long_functions(path: str, source: str, language: str = "unknown") -> 
         if pattern.match(line):
             in_function = True
             func_start = lineno
-            func_name = line.strip()[:50]  # First 50 chars
+            # FIX: Removed unused variable func_name
             indent_level = len(line) - len(line.lstrip())
         
         # Check if we've exited the function
@@ -284,13 +284,32 @@ def _detect_unused_imports_js(path: str, source: str, language: str) -> List[Dic
         # import ... from ...
         match = re.match(r"^\s*import\s+(?:\{([^}]+)\}|(\w+(?:\s*,\s*\{\s*[^}]+\s*\})?)|(\w+(?:\s+as\s+\w+)?)|(?:\*\s+as\s+(\w+)))", line)
         if match:
-            # Extract imported names
+            # FIX: Process all capture groups for different import patterns
             if match.group(1):  # {named imports}
                 names = [n.split(' as ')[1] if ' as ' in n else n for n in match.group(1).split(',')]
                 imports_info.extend([(n.strip(), lineno) for n in names])
-            else:
-                # default import
-                pass
+            elif match.group(2):  # default import with potential destructuring
+                # e.g., "React, { useState }" or just "React"
+                parts = match.group(2).split(',')
+                for part in parts:
+                    part = part.strip()
+                    if '{' in part:  # Contains destructuring
+                        names = re.findall(r'\b(\w+)\b', part)
+                        imports_info.extend([(n, lineno) for n in names])
+                    elif part:
+                        imports_info.append((part, lineno))
+            elif match.group(3):  # Simple default import (possibly with alias)
+                # e.g., "React" or "React as R"
+                name = match.group(3).strip()
+                if ' as ' in name:
+                    name = name.split(' as ')[1].strip()
+                if name:
+                    imports_info.append((name, lineno))
+            elif match.group(4):  # Namespace import
+                # e.g., "import * as React"
+                name = match.group(4).strip()
+                if name:
+                    imports_info.append((name, lineno))
         
         # const x = require(...)
         match = re.match(r"^\s*(?:const|let|var)\s+(\w+)\s*=\s*require\s*\(", line)

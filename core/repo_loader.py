@@ -89,7 +89,44 @@ def load_from_github(url: str) -> tuple:
         # Clean up on error
         if os.path.exists(tmp):
             shutil.rmtree(tmp, ignore_errors=True)
-        raise RuntimeError(f"Failed to clone repository: {exc}") from exc
+        
+        # Provide better error diagnostics
+        error_msg = str(exc).lower()
+        if "could not resolve host" in error_msg or "name or service not known" in error_msg:
+            raise RuntimeError(
+                f"❌ Network Error: Cannot reach GitHub (DNS resolution failed).\n\n"
+                f"Solutions:\n"
+                f"  1. Check your internet connection\n"
+                f"  2. Try using a ZIP file instead:\n"
+                f"     - Download: {url}/archive/refs/heads/main.zip\n"
+                f"     - Upload to CodeAid\n"
+                f"  3. Check if GitHub is accessible from your network\n"
+                f"  4. Try again in a few moments\n\n"
+                f"Original error: {exc}"
+            ) from exc
+        elif "repository not found" in error_msg or "not a git repository" in error_msg:
+            raise RuntimeError(
+                f"❌ Repository Not Found: The URL may be incorrect or the repo is private.\n\n"
+                f"Check:\n"
+                f"  1. URL is correct: {url}\n"
+                f"  2. Repository is public (private repos need authentication)\n"
+                f"  3. Repository still exists\n\n"
+                f"Original error: {exc}"
+            ) from exc
+        elif "authentication required" in error_msg or "permission denied" in error_msg:
+            raise RuntimeError(
+                f"❌ Authentication Required: This appears to be a private repository.\n\n"
+                f"Try:\n"
+                f"  1. Upload a ZIP file instead\n"
+                f"  2. Contact repository owner for access\n"
+                f"  3. Use a public repository\n\n"
+                f"Original error: {exc}"
+            ) from exc
+        else:
+            raise RuntimeError(
+                f"Failed to clone repository: {exc}\n\n"
+                f"Alternative: Try uploading a ZIP file instead of using a GitHub URL."
+            ) from exc
 
 
 def load_from_zip(zip_bytes: bytes) -> tuple:
