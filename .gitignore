@@ -47,3 +47,12 @@ htmlcov/
 tmp/
 temp/
 *.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.pyc
+.cache/
+*.bak

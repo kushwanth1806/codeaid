@@ -38,6 +38,7 @@ from core.agents.universal_analyzer import detect_universal_issues, detect_unuse
 
 MAX_FUNC_LINES = 50
 MAX_PARAMS = 7
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB - skip larger files
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +59,17 @@ def scan_repository(files: List[Dict]) -> List[Dict]:
     -------
     List of issue dicts
     """
+    # Input validation - check for empty repository
+    if not files:
+        return [{
+            "file": "repository",
+            "line": 1,
+            "issue_type": "empty_repository",
+            "description": "Repository contains no source files to analyze",
+            "severity": "warning",
+            "fixable": False,
+        }]
+    
     # Detect languages in the repository
     detection = detect_languages(files)
     primary_lang = detection.get("primary_language", "python")
@@ -106,6 +118,18 @@ def scan_files(files: List[Dict], primary_language: str = "python") -> List[Dict
     for f in files:
         path = f.get("path", "")
         source = f.get("source", "")
+        
+        # Skip files that are too large (likely generated/binary)
+        if len(source) > MAX_FILE_SIZE:
+            all_issues.append({
+                "file": path,
+                "line": 1,
+                "issue_type": "file_too_large",
+                "description": f"File too large ({len(source)} bytes, limit {MAX_FILE_SIZE}), skipping",
+                "severity": "info",
+                "fixable": False,
+            })
+            continue
         
         # Detect file language
         file_ext = Path(path).suffix.lower()

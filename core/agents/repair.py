@@ -79,15 +79,30 @@ def repair_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
     list of repair result dicts; also mutates files[*]["source"] in place
     when a fix is applied so subsequent passes see updated code.
     """
-    # Build quick lookup: path → file dict
-    file_map: Dict[str, Dict] = {f["path"]: f for f in files}
+    # Validate inputs
+    if not files:
+        return []
+    if not issues:
+        return []
+    
+    # Build quick lookup: path → file dict (with safe access)
+    file_map: Dict[str, Dict] = {}
+    for f in files:
+        file_path = f.get("path") or f.get("file")
+        if file_path:
+            file_map[file_path] = f
 
     results: List[Dict] = []
     
     # Group issues by file and sort by line number (descending) to avoid line number shifts
     issues_by_file: Dict[str, List[Dict]] = {}
     for issue in issues:
-        path = issue["file"]
+        # SAFE ACCESS: Use .get() instead of direct bracket access
+        path = issue.get("file") or issue.get("path")
+        if not path:
+            results.append(_failed(issue, "Issue missing file path."))
+            continue
+            
         if path not in issues_by_file:
             issues_by_file[path] = []
         issues_by_file[path].append(issue)
@@ -98,26 +113,33 @@ def repair_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
         sorted_issues = sorted(file_issues, key=lambda x: x.get("line", 0), reverse=True)
         
         for issue in sorted_issues:
-            if not issue.get("fixable"):
-                results.append(_skipped(issue, "Issue marked as not auto-fixable."))
+            # SAFE ACCESS: Use .get() with defaults
+            if not issue.get("fixable", False):
+                reason = issue.get("detail") or "Issue marked as not auto-fixable."
+                results.append(_skipped(issue, reason))
                 continue
 
-            itype = issue["issue_type"]
+            # SAFE ACCESS: Get issue_type with fallback
+            itype = issue.get("issue_type") or issue.get("type") or "unknown"
+            
             file_entry = file_map.get(path)
             if file_entry is None:
-                results.append(_failed(issue, "File not found in loaded files."))
+                results.append(_failed(issue, f"File not found in loaded files: {path}"))
                 continue
 
             # Detect file language
             language = _detect_file_language(path)
             
             # Apply language-appropriate repairs
-            if itype == "unused_import":
-                result = _fix_unused_import(issue, file_entry, language)
-            elif itype == "trailing_whitespace":
-                result = _fix_trailing_whitespace(issue, file_entry)
-            else:
-                result = _skipped(issue, f"No auto-repair for issue type '{itype}'.")
+            try:
+                if itype == "unused_import":
+                    result = _fix_unused_import(issue, file_entry, language)
+                elif itype == "trailing_whitespace":
+                    result = _fix_trailing_whitespace(issue, file_entry)
+                else:
+                    result = _skipped(issue, f"No auto-repair for issue type '{itype}'.")
+            except Exception as e:
+                result = _failed(issue, f"Repair failed: {str(e)}")
 
             results.append(result)
 
@@ -155,9 +177,10 @@ def _fix_unused_import(issue: Dict, file_entry: Dict, language: str = "python") 
     
     Supports: Python, JavaScript, TypeScript, Java, Go, Rust, etc.
     """
-    source = file_entry["source"]
-    target_name = _extract_import_name(issue["description"])
-    target_line = issue["line"]
+    # SAFE ACCESS
+    source = file_entry.get("source", "")
+    target_name = _extract_import_name(issue.get("description", ""))
+    target_line = issue.get("line", -1)
 
     if language == "python":
         return _fix_unused_import_python(issue, file_entry, source, target_name, target_line)
@@ -332,10 +355,11 @@ def _extract_import_name(description: str) -> str:
 
 
 def _skipped(issue: Dict, detail: str) -> Dict:
+    """Create a skipped repair result with safe field access."""
     return {
-        "file": issue["file"],
-        "issue_type": issue["issue_type"],
-        "line": issue["line"],
+        "file": issue.get("file") or issue.get("path") or "unknown",
+        "issue_type": issue.get("issue_type") or issue.get("type") or "unknown",
+        "line": issue.get("line", -1),
         "status": "skipped",
         "detail": detail,
         "patched": None,
@@ -343,11 +367,25 @@ def _skipped(issue: Dict, detail: str) -> Dict:
 
 
 def _failed(issue: Dict, detail: str) -> Dict:
+    """Create a failed repair result with safe field access."""
     return {
-        "file": issue["file"],
-        "issue_type": issue["issue_type"],
-        "line": issue["line"],
+        "file": issue.get("file") or issue.get("path") or "unknown",
+        "issue_type": issue.get("issue_type") or issue.get("type") or "unknown",
+        "line": issue.get("line", -1),
         "status": "failed",
         "detail": detail,
         "patched": None,
+    }
+
+
+def _fixed(issue: Dict, target_name: str, patched: str, language: str = "") -> Dict:
+    """Create a successful repair result with safe field access."""
+    itype = issue.get("issue_type", "unknown")
+    return {
+        "file": issue.get("file") or issue.get("path") or "unknown",
+        "issue_type": itype,
+        "line": issue.get("line", -1),
+        "status": "fixed",
+        "detail": f"Fixed {language or 'code'} issue: {itype}",
+        "patched": patched,
     }

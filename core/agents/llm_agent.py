@@ -91,7 +91,12 @@ def enrich_issues(issues: List[Dict], files: List[Dict]) -> List[Dict]:
             issue["llm_insight"] = _fallback_insight(issue)
         return issues
 
-    file_map = {f["path"]: f["source"] for f in files}
+    # Build file_map safely, skipping files missing 'path' or 'source'
+    file_map = {
+        f.get("path") or f.get("file", ""): f.get("source", "")
+        for f in files
+        if f.get("path") or f.get("file")
+    }
 
     for i in range(0, len(issues), _ISSUES_PER_BATCH):
         batch = issues[i: i + _ISSUES_PER_BATCH]
@@ -204,12 +209,15 @@ def _enrich_batch(batch: List[Dict], file_map: Dict[str, str]) -> None:
     """Send one batch of issues to the LLM and write insights back in place."""
     items = []
     for issue in batch:
-        snippet = _get_snippet(file_map.get(issue["file"], ""), issue["line"])
+        # Use safe .get() access with fallbacks for all fields
+        file_path = issue.get("file") or issue.get("path", "")
+        line_num = issue.get("line", 0)
+        snippet = _get_snippet(file_map.get(file_path, ""), line_num)
         items.append({
-            "issue_type": issue["issue_type"],
-            "description": issue["description"],
-            "file": issue["file"],
-            "line": issue["line"],
+            "issue_type": issue.get("issue_type") or issue.get("type", "unknown"),
+            "description": issue.get("description") or issue.get("message", "No description"),
+            "file": file_path,
+            "line": line_num,
             "snippet": snippet,
         })
 

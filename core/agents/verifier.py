@@ -69,12 +69,17 @@ def verify_repairs(repair_results: List[Dict], files: List[Dict]) -> List[Dict]:
     """
     # Identify files that were actually modified
     fixed_files = {
-        r["file"]
+        r.get("file") or r.get("path", "unknown")
         for r in repair_results
-        if r["status"] == "fixed"
+        if r.get("status") == "fixed"
     }
 
-    file_map: Dict[str, str] = {f["path"]: f["source"] for f in files}
+    # Build file_map safely, skipping files missing 'path' or 'source'
+    file_map: Dict[str, str] = {
+        f.get("path") or f.get("file", ""): f.get("source", "")
+        for f in files
+        if f.get("path") or f.get("file")
+    }
 
     results: List[Dict] = []
     for path in fixed_files:

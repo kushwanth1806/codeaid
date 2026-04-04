@@ -99,7 +99,7 @@ def load_from_github(url: str) -> tuple:
                 f"  1. Check your internet connection\n"
                 f"  2. Try using a ZIP file instead:\n"
                 f"     - Download: {url}/archive/refs/heads/main.zip\n"
-                f"     - Upload to CodeAid\n"
+                f"     - Upload to codeAID\n"
                 f"  3. Check if GitHub is accessible from your network\n"
                 f"  4. Try again in a few moments\n\n"
                 f"Original error: {exc}"
@@ -244,6 +244,9 @@ def _collect_all_files(root: str) -> List[Dict]:
         "pyproject.toml", "Dockerfile", ".env.example", "pytest.ini",
         "tox.ini", ".github", "Makefile", "README", "readme.md", "readme.rst",
     }
+    
+    # Track visited inodes to prevent symlink loops
+    visited_inodes = set()
 
     for file_path in root_path.rglob("*"):
         # Skip hidden and virtual-env directories
@@ -253,6 +256,16 @@ def _collect_all_files(root: str) -> List[Dict]:
         # Skip directories (we only want files)
         if file_path.is_dir():
             continue
+        
+        # Detect symlink loops
+        try:
+            stat_info = file_path.stat()
+            inode = (stat_info.st_ino, stat_info.st_dev)
+            if inode in visited_inodes:
+                continue  # Already seen this inode, skip to prevent loop
+            visited_inodes.add(inode)
+        except OSError:
+            continue  # Unreadable file – skip silently
         
         # Check if this file is interesting
         is_interesting = (
@@ -266,12 +279,16 @@ def _collect_all_files(root: str) -> List[Dict]:
             continue
         
         try:
-            source = file_path.read_text(encoding="utf-8", errors="replace")
+            # Try UTF-8 first, skip on encoding error instead of replacing
+            source = file_path.read_text(encoding="utf-8")
             rel_path = str(file_path.relative_to(root_path))
             file_dict = {"path": rel_path, "source": source}
             enriched = _enrich_file_dict(file_dict)
             collected.append(enriched)
-        except (OSError, UnicodeDecodeError):
+        except UnicodeDecodeError:
+            # Skip files with encoding issues (likely binary)
+            continue
+        except OSError:
             continue  # Skip unreadable files
 
     return collected
@@ -287,17 +304,35 @@ def _collect_python_files(root: str) -> List[Dict]:
         ".git", "__pycache__", ".tox", "node_modules",
         "venv", ".venv", "env", "dist", "build", ".eggs",
     }
+    
+    # Track visited inodes to prevent symlink loops
+    visited_inodes = set()
 
     for py_file in root_path.rglob("*.py"):
         # Skip hidden / virtual-env directories
         if any(part in skip_dirs for part in py_file.parts):
             continue
+        
+        # Detect symlink loops
         try:
-            source = py_file.read_text(encoding="utf-8", errors="replace")
+            stat_info = py_file.stat()
+            inode = (stat_info.st_ino, stat_info.st_dev)
+            if inode in visited_inodes:
+                continue  # Already seen this inode, skip to prevent loop
+            visited_inodes.add(inode)
+        except OSError:
+            continue  # Unreadable file – skip silently
+        
+        try:
+            # Try UTF-8 first, skip on encoding error instead of replacing
+            source = py_file.read_text(encoding="utf-8")
             rel_path = str(py_file.relative_to(root_path))
             file_dict = {"path": rel_path, "source": source}
             enriched = _enrich_file_dict(file_dict)
             collected.append(enriched)
+        except UnicodeDecodeError:
+            # Skip files with encoding issues (likely binary)
+            continue
         except OSError:
             continue  # unreadable file – skip silently
 
@@ -352,6 +387,9 @@ def _collect_source_files(root: str) -> List[Dict]:
         # SQL
         ".sql",
     }
+    
+    # Track visited inodes to prevent symlink loops
+    visited_inodes = set()
 
     for file_path in root_path.rglob("*"):
         # Skip hidden and build directories
@@ -361,17 +399,31 @@ def _collect_source_files(root: str) -> List[Dict]:
         if file_path.is_dir():
             continue
         
+        # Detect symlink loops
+        try:
+            stat_info = file_path.stat()
+            inode = (stat_info.st_ino, stat_info.st_dev)
+            if inode in visited_inodes:
+                continue  # Already seen this inode, skip to prevent loop
+            visited_inodes.add(inode)
+        except OSError:
+            continue  # Unreadable file – skip silently
+        
         # Check if source file
         if file_path.suffix.lower() not in source_extensions:
             continue
         
         try:
-            source = file_path.read_text(encoding="utf-8", errors="replace")
+            # Try UTF-8 first, skip on encoding error instead of replacing
+            source = file_path.read_text(encoding="utf-8")
             rel_path = str(file_path.relative_to(root_path))
             file_dict = {"path": rel_path, "source": source}
             enriched = _enrich_file_dict(file_dict)
             collected.append(enriched)
-        except (OSError, UnicodeDecodeError):
+        except UnicodeDecodeError:
+            # Skip files with encoding issues (likely binary)
+            continue
+        except OSError:
             continue
 
     return collected

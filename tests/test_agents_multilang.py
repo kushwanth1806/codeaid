@@ -1,7 +1,7 @@
 """
 test_agents_multilang.py
 -----------------------
-Comprehensive test suite for CodeAid agents with multi-language support.
+Comprehensive test suite for codeAID agents with multi-language support.
 
 Tests:
 1. Scanner: Can detect issues in Python, JavaScript, Java, etc.

@@ -1,7 +1,7 @@
 """
 lang_detector.py
 ----------------
-Language detection module for CodeAid.
+Language detection module for codeAID.
 
 Detects project type and primary language(s) based on file extensions,
 package manager files, and project structure.

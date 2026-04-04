@@ -28,8 +28,8 @@ from utils.codexglue_loader import run_evaluation
 # ── Page Config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="CodeAid – AI Repository Debugger",
-    page_icon="▶",
+    page_title="codeAID – AI Repository Debugger",
+    page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -40,17 +40,22 @@ st.markdown(
     """
     <style>
     :root {
-        --primary: #1a1a2e;
-        --secondary: #d63447;
-        --accent: #00a8e8;
-        --success: #06d6a0;
-        --warning: #f77f00;
-        --danger: #d62828;
-        --info: #118ab2;
-        --light: #f8f9fa;
-        --border: #333340;
-        --text-primary: #e8e8e8;
-        --text-secondary: #a0a0a0;
+        --primary: #ffffff;
+        --secondary: #0d47a1;
+        --accent: #0ea5a5;
+        --success: #059669;
+        --warning: #d97706;
+        --danger: #dc2626;
+        --info: #0284c7;
+        --light: #f9fafb;
+        --border: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f3f4f6;
+        --bg-tertiary: #ede9fe;
+        --accent-subtle: #e0f2fe;
+        --sidebar-bg: #fafbfc;
     }
 
     * {
@@ -60,160 +65,194 @@ st.markdown(
     }
 
     body, html {
-        background: #0f0f1e;
+        background: #ffffff;
     }
 
-    /* Main Header - Clean and Minimal */
+    /* Main Header - Clean and Minimal (GitHub/Linear Style) */
     .main-header {
-        background: #1a1a2e;
-        padding: 2rem 2rem;
-        border-radius: 8px;
-        margin-bottom: 2rem;
-        text-align: center;
-        border: 1px solid #333340;
+        background: linear-gradient(135deg, #ffffff 0%, var(--bg-secondary) 100%);
+        padding: 3rem 2.5rem;
+        border-radius: 16px;
+        margin-bottom: 2.5rem;
+        border: 1px solid var(--border);
         position: relative;
         overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        text-align: center;
     }
     
     .logo-container {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
+        justify-content: flex-start;
+        gap: 2rem;
+        margin-bottom: 0;
         position: relative;
         z-index: 1;
     }
     
     .logo-image {
-        width: 70px;
-        height: 70px;
+        width: 100px;
+        height: 100px;
         object-fit: contain;
         image-rendering: high-quality;
+        flex-shrink: 0;
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
     }
     
     .header-text {
         flex: 1;
+        text-align: center;
     }
     
     .main-header h1 {
-        color: #ffffff;
-        font-size: 2.2rem;
-        margin: 0;
-        font-weight: 700;
-        letter-spacing: -0.3px;
+        color: var(--text-primary);
+        font-size: 2.6rem;
+        margin: 0.5rem 0 0.8rem 0;
+        font-weight: 800;
+        letter-spacing: -0.8px;
         position: relative;
         z-index: 1;
+        background: linear-gradient(135deg, #111827 0%, #0ea5a5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     
     .main-header p {
         color: var(--text-secondary);
-        font-size: 1rem;
-        margin: 0.5rem 0 0;
+        font-size: 0.95rem;
+        margin: 0.7rem 0 0;
         position: relative;
         z-index: 1;
-        font-weight: 400;
+        font-weight: 500;
+        line-height: 1.5;
     }
     
     .main-header .subtitle {
         color: var(--accent);
-        font-size: 0.9rem;
-        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        margin-top: 0.6rem;
         position: relative;
         z-index: 1;
-        font-weight: 500;
+        font-weight: 600;
+        letter-spacing: 0.5px;
     }
 
     /* Metric Cards */
     .metric-card {
-        background: #1a1a2e;
-        border: 1px solid #333340;
-        border-radius: 8px;
-        padding: 1.5rem;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.75rem;
         text-align: center;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
     
     .metric-card:hover {
         border-color: var(--accent);
-        background: #222235;
+        background: var(--accent-subtle);
+        box-shadow: 0 4px 12px rgba(14, 165, 165, 0.12);
+        transform: translateY(-2px);
     }
     
     .metric-card .value {
         font-size: 2.2rem;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--accent);
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.6rem;
     }
     
     .metric-card .label {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: var(--text-secondary);
         margin-top: 0.5rem;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 500;
+        letter-spacing: 0.6px;
+        font-weight: 700;
     }
 
     /* Issue Cards */
     .issue-card {
-        border-left: 3px solid var(--secondary);
-        background: #1a1a2e;
-        padding: 1rem 1.2rem;
-        border-radius: 6px;
+        border-left: 4px solid var(--accent);
+        background: var(--bg-primary);
+        padding: 1.2rem;
+        border-radius: 8px;
         margin-bottom: 0.8rem;
-        transition: all 0.2s ease;
-        border: 1px solid #333340;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
     
     .issue-card:hover {
-        background: #222235;
-        border-color: #444450;
+        background: var(--accent-subtle);
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(14, 165, 165, 0.1);
+        transform: translateX(4px);
     }
     
     .issue-card.warning {
         border-left-color: var(--warning);
     }
     
+    .issue-card.warning:hover {
+        background: rgba(217, 119, 6, 0.06);
+        border-color: var(--warning);
+    }
+    
     .issue-card.info {
         border-left-color: var(--info);
+    }
+    
+    .issue-card.info:hover {
+        background: rgba(2, 132, 199, 0.06);
+        border-color: var(--info);
     }
     
     .issue-card.success {
         border-left-color: var(--success);
     }
+    
+    .issue-card.success:hover {
+        background: rgba(5, 150, 105, 0.06);
+        border-color: var(--success);
+    }
 
     /* Progress Bar */
     .health-bar-container {
-        background: #333340;
+        background: var(--bg-secondary);
         border-radius: 12px;
-        height: 24px;
+        height: 28px;
         overflow: hidden;
-        border: 1px solid #444450;
+        border: 1px solid var(--border);
     }
     
     .health-bar {
         border-radius: 12px;
-        height: 24px;
-        transition: width 0.6s ease;
-        background: linear-gradient(90deg, #06d6a0 0%, #f77f00 50%, #d62828 100%);
+        height: 28px;
+        transition: width 0.8s ease;
+        background: linear-gradient(90deg, #059669 0%, #d97706 50%, #dc2626 100%);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     /* Info Cards */
     .tip-card {
-        background: #1a1a2e;
-        border: 1px solid #333340;
-        border-radius: 6px;
-        padding: 1rem;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1.2rem;
         margin-bottom: 0.8rem;
         color: var(--text-secondary);
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
     
     .tip-card:hover {
-        border-color: var(--info);
-        background: #222235;
+        border-color: var(--accent);
+        background: var(--accent-subtle);
+        box-shadow: 0 2px 8px rgba(14, 165, 165, 0.08);
     }
 
     /* Status Indicators */
@@ -224,21 +263,27 @@ st.markdown(
     /* Badges */
     .stage-badge {
         display: inline-block;
-        background: #222235;
+        background: var(--accent-subtle);
         color: var(--accent);
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 6px;
         font-size: 0.7rem;
-        font-weight: 600;
+        font-weight: 700;
         margin-right: 6px;
-        border: 1px solid #333340;
+        border: 1px solid rgba(14, 165, 165, 0.3);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.6px;
+        transition: all 0.2s ease;
+    }
+    
+    .stage-badge:hover {
+        background: var(--accent);
+        color: white;
     }
 
     /* Tabs and Sections */
     .stTabs [data-baseweb="tab-list"] {
-        border-bottom: 1px solid #333340;
+        border-bottom: 2px solid var(--border);
         background: transparent;
     }
     
@@ -246,10 +291,11 @@ st.markdown(
         background: transparent;
         border-color: transparent;
         color: var(--text-secondary);
-        padding: 10px 16px;
-        font-weight: 500;
-        border-bottom: 2px solid transparent;
-        transition: all 0.2s ease;
+        padding: 12px 18px;
+        font-weight: 600;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
     }
     
     .stTabs [role="tablist"] [role="tab"]:hover {
@@ -263,130 +309,145 @@ st.markdown(
 
     /* Expanders */
     .streamlit-expanderHeader {
-        background: #1a1a2e;
-        border-radius: 6px;
-        padding: 12px 14px;
-        border: 1px solid #333340;
-        transition: all 0.2s ease;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        font-weight: 600;
     }
     
     .streamlit-expanderHeader:hover {
-        background: #222235;
-        border-color: #444450;
+        background: var(--accent-subtle);
+        border-color: var(--accent);
     }
 
     /* Code Blocks */
     pre {
-        background: #0f0f1e !important;
-        border: 1px solid #333340 !important;
-        border-radius: 6px !important;
-        padding: 14px !important;
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        padding: 16px !important;
         color: var(--text-secondary) !important;
-        line-height: 1.5 !important;
+        line-height: 1.6 !important;
     }
     
     code {
-        color: var(--accent) !important;
-        font-family: 'Monaco', 'Courier New', monospace !important;
+        color: #0284c7 !important;
+        font-family: 'Monaco', 'Menlo', 'Courier New', monospace !important;
         font-size: 0.85rem !important;
+        font-weight: 500 !important;
     }
 
     /* Buttons */
     .stButton > button {
-        background: var(--secondary);
+        background: var(--accent);
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        text-transform: capitalize;
+        letter-spacing: 0px;
         font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(14, 165, 165, 0.15);
     }
     
     .stButton > button:hover {
-        background: #e8475c;
+        background: #0d8c8c;
+        box-shadow: 0 4px 12px rgba(14, 165, 165, 0.3);
+        transform: translateY(-1px);
     }
     
     .stButton > button:active {
-        background: #c91e37;
+        background: #067878;
+        transform: translateY(0px);
     }
 
     /* Inputs */
     .stSelectbox > div > div {
-        background: #1a1a2e;
-        border: 1px solid #333340;
-        color: var(--text-secondary);
-        border-radius: 6px;
-        transition: all 0.2s ease;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: 8px;
+        transition: all 0.3s ease;
     }
     
     .stSelectbox > div > div:hover {
         border-color: var(--accent);
+        background: var(--accent-subtle);
     }
     
     .stTextInput > div > div > input {
-        background: #1a1a2e !important;
-        border: 1px solid #333340 !important;
-        color: var(--text-secondary) !important;
-        border-radius: 6px !important;
+        background: var(--bg-primary) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px !important;
         padding: 10px 12px !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.3s ease !important;
+        font-weight: 500 !important;
     }
     
     .stTextInput > div > div > input:focus {
         border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(14, 165, 165, 0.1) !important;
     }
 
     /* Messages */
     .stSuccess {
-        background: rgba(6, 214, 160, 0.1);
-        border-left: 3px solid var(--success);
-        padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid rgba(6, 214, 160, 0.2);
+        background: rgba(5, 150, 105, 0.08);
+        border-left: 4px solid var(--success);
+        padding: 1.2rem;
+        border-radius: 8px;
+        border: 1px solid rgba(5, 150, 105, 0.25);
     }
     
     .stWarning {
-        background: rgba(247, 127, 0, 0.1);
-        border-left: 3px solid var(--warning);
-        padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid rgba(247, 127, 0, 0.2);
+        background: rgba(217, 119, 6, 0.08);
+        border-left: 4px solid var(--warning);
+        padding: 1.2rem;
+        border-radius: 8px;
+        border: 1px solid rgba(217, 119, 6, 0.25);
     }
     
     .stError {
-        background: rgba(214, 40, 40, 0.1);
-        border-left: 3px solid var(--danger);
-        padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid rgba(214, 40, 40, 0.2);
+        background: rgba(220, 38, 38, 0.08);
+        border-left: 4px solid var(--danger);
+        padding: 1.2rem;
+        border-radius: 8px;
+        border: 1px solid rgba(220, 38, 38, 0.25);
     }
     
     .stInfo {
-        background: rgba(17, 138, 178, 0.1);
-        border-left: 3px solid var(--info);
-        padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid rgba(17, 138, 178, 0.2);
+        background: rgba(2, 132, 199, 0.08);
+        border-left: 4px solid var(--info);
+        padding: 1.2rem;
+        border-radius: 8px;
+        border: 1px solid rgba(2, 132, 199, 0.25);
     }
 
     /* Section Headers */
     .section-header {
-        border-bottom: 1px solid #333340;
-        padding-bottom: 0.8rem;
-        margin-bottom: 1.2rem;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
         color: var(--text-primary);
-        font-weight: 600;
-        font-size: 1.2rem;
+        font-weight: 700;
+        font-size: 1.3rem;
+        letter-spacing: -0.3px;
     }
 
     /* Typography */
-    h1 { color: var(--text-primary); font-weight: 700; }
-    h2 { color: var(--text-primary); font-weight: 600; }
-    h3 { color: var(--text-primary); font-weight: 600; }
-    p { color: var(--text-secondary); line-height: 1.5; }
+    h1 { color: var(--text-primary); font-weight: 800; letter-spacing: -0.6px; }
+    h2 { color: var(--text-primary); font-weight: 700; letter-spacing: -0.3px; }
+    h3 { color: var(--text-primary); font-weight: 700; }
+    p { color: var(--text-secondary); line-height: 1.6; font-weight: 500; }
+    
+    /* Status Indicators */
+    .good-pattern { color: var(--success); font-weight: 700; }
+    .bad-pattern { color: var(--danger); font-weight: 700; }
+    .neutral-pattern { color: var(--accent); font-weight: 700; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -515,30 +576,53 @@ def _render_eval_tab():
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
+    # Display logo image
+    logo_path = "static/codeAID.jpeg"
+    
+    try:
+        if os.path.exists(logo_path):
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                st.image(logo_path, width=180)
+        else:
+            st.warning(f"⚠️ Logo not found at {logo_path}")
+    except Exception as e:
+        st.error(f"Failed to load logo: {str(e)}")
+    
+    st.markdown("")  # Add spacing
+    
     # Sidebar Logo/Branding
     st.markdown(
         """
         <style>
         .sidebar-header {
             text-align: center;
-            padding: 1.5rem 0;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(23, 210, 255, 0.2);
+            padding: 1.2rem 0 1.8rem 0;
+            margin-bottom: 1.8rem;
+            border-bottom: 2px solid var(--border);
         }
         .sidebar-header h2 {
-            margin: 0;
-            color: #17d9ff;
-            font-size: 1.5rem;
+            margin: 0.5rem 0 0;
+            color: var(--text-primary);
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            background: linear-gradient(135deg, #111827 0%, #0ea5a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .sidebar-header p {
-            margin: 0.3rem 0 0;
-            color: #a8b2d8;
-            font-size: 0.85rem;
+            margin: 0.4rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
         }
         </style>
         <div class='sidebar-header'>
-            <h2>CodeAid</h2>
-            <p>Configuration Panel</p>
+            <h2>codeAID</h2>
+            <p>Configuration</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -696,7 +780,7 @@ with st.sidebar:
         """
         **🌍 Multi-Language Support**
         
-        CodeAid analyzes projects in:
+        codeAID analyzes projects in:
         - 🐍 Python
         - 📜 JavaScript/TypeScript
         - ☕ Java
@@ -722,39 +806,13 @@ if "eval_results" not in st.session_state:
 
 # ── Main Content ─────────────────────────────────────────────────────────────
 
-# Get the path to the logo
-import base64
-
-# Try PNG first (professional logo), then SVG
-logo_png_path = "static/logo.png"
-logo_svg_path = "static/logo.svg"
-
-logo_html = ""
-
-if os.path.exists(logo_png_path):
-    # Use PNG logo with base64 encoding for better compatibility
-    with open(logo_png_path, "rb") as f:
-        logo_data = base64.b64encode(f.read()).decode()
-    logo_html = f'<img src="data:image/png;base64,{logo_data}" class="logo-image" alt="CodeAid Logo" />'
-elif os.path.exists(logo_svg_path):
-    # Fallback to SVG
-    with open(logo_svg_path, "r") as f:
-        logo_svg = f.read()
-    logo_html = logo_svg
-else:
-    # Ultimate fallback
-    logo_html = '<div style="width: 85px; height: 85px; background: linear-gradient(135deg, #17d9ff 0%, #e94560 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; color: white; box-shadow: 0 0 20px rgba(23, 210, 255, 0.3);">CA</div>'
-
-# Render main header in the main content area with logo
+# Render main header in the main content area
 st.markdown(
-    f"""<div class='main-header'>
-        <div class='logo-container'>
-            {logo_html}
-            <div class='header-text'>
-                <h1>CodeAid</h1>
-                <p>AI-Powered Repository Debugger & Auto-Repair Assistant</p>
-                <p class='subtitle'>Scan • Analyze • Fix • Verify</p>
-            </div>
+    """<div class='main-header'>
+        <div class='header-text'>
+            <h1>codeAID</h1>
+            <p>AI-Powered Repository Debugger & Auto-Repair Assistant</p>
+            <p class='subtitle'>Scan • Analyze • Fix • Verify</p>
         </div>
     </div>""",
     unsafe_allow_html=True,
@@ -774,7 +832,7 @@ if analyze_btn:
             progress_bar.progress(pct)
             status_text.markdown(f"**{stage}**")
 
-        with st.spinner("Running CodeAid pipeline…"):
+        with st.spinner("Running codeAID pipeline…"):
             try:
                 results = run_pipeline(
                     source=source,
@@ -971,15 +1029,18 @@ if results:
                     else "warning" if sev == "warning"
                     else "info"
                 )
+                # Use safe .get() for file and line fields
+                file_path = issue.get("file") or issue.get("path", "unknown")
+                line_num = issue.get("line", "?")
                 with st.expander(
-                    f"{icon} [{sev.upper()}] {title} — `{issue['file']}` Line {issue.get('line', '?')}"
+                    f"{icon} [{sev.upper()}] {title} — `{file_path}` Line {line_num}"
                 ):
                     col_a, col_b = st.columns([1, 1])
                     with col_a:
                         st.markdown(f"**Message:** {issue.get('message', '')}")
                         st.markdown(f"**Fixable:** {'Yes' if issue.get('fixable') else 'No'}")
                         if issue.get("snippet"):
-                            st.code(issue["snippet"], language="python")
+                            st.code(issue.get("snippet", ""), language="python")
                     with col_b:
                         st.markdown(f"**Summary:** {issue.get('summary', '')}")
                         st.markdown(f"**Impact:** {issue.get('impact', '')}")
