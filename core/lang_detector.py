@@ -7,7 +7,7 @@ Detects project type and primary language(s) based on file extensions,
 package manager files, and project structure.
 """
 
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 from pathlib import Path
 from collections import Counter
 

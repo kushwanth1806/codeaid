@@ -5,11 +5,9 @@ Identifies project type, architecture, dependencies, and design quality.
 Uses heuristics + optional LLM reasoning.
 """
 
-import os
 import re
 from collections import defaultdict
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 
 # ── Project Type Detection ────────────────────────────────────────────────────
@@ -343,15 +341,45 @@ def generate_developer_tips(project_type: str, architecture: Dict) -> List[str]:
     return tips[:8]  # Return top 8 tips
 
 
+# ── Code Quality Assessment ──────────────────────────────────────────────────
+
+def assess_code_quality(all_files: List[Dict], patterns: Dict, architecture: Dict) -> Dict:
+    """
+    Assess various code quality metrics.
+
+    Returns:
+        Dict with quality metrics and status.
+    """
+    py_files = [f for f in all_files if f["extension"] == ".py"]
+    combined = "\n".join(f["content"] for f in py_files)
+    
+    quality = {
+        "type_hints_used": bool(re.search(r"from typing import|: \w+\[|-> \w+", combined)),
+        "docstrings_present": bool(re.search(r'""".*?"""', combined, re.DOTALL)),
+        "logging_implemented": bool(re.search(r"import logging|logger\.(debug|info|warning|error)", combined)),
+        "error_handling": bool(re.search(r"except \w+:", combined)),
+        "tests_present": any("test" in f["relative_path"].lower() for f in all_files),
+        "ci_cd_configured": any(".github" in f["relative_path"] or "ci" in f["name"].lower() for f in all_files),
+        "documented": any(f["name"].lower() in ("readme.md", "readme.rst") for f in all_files),
+        "modular": len(py_files) > 5 and any(f["name"] == "__init__.py" for f in all_files),
+        "linted": any(f["name"] in (".flake8", ".pylintrc", "pyproject.toml") for f in all_files),
+        "formatted": any(f["name"] in (".black", "pyproject.toml") for f in all_files),
+    }
+    
+    quality["overall_score"] = sum(1 for v in quality.values() if v) * 10
+    
+    return quality
+
 # ── Main Entry Point ──────────────────────────────────────────────────────────
 
-def analyze_project(all_files: List[Dict], repo_path: str) -> Dict:
+def analyze_project(all_files: List[Dict], repo_path: str, repo_name: str = None) -> Dict:
     """
     Run the full Project Understanding analysis pipeline.
 
     Args:
         all_files: All repository files from repo_loader.collect_all_files().
         repo_path: Root path of the repository.
+        repo_name: Display name of the repository (optional, used for UI display).
 
     Returns:
         Comprehensive project analysis dict.
@@ -362,6 +390,7 @@ def analyze_project(all_files: List[Dict], repo_path: str) -> Dict:
     dependencies = extract_dependencies(all_files)
     architecture = assess_architecture(all_files, repo_path)
     patterns = detect_design_patterns(py_files)
+    code_quality = assess_code_quality(all_files, patterns, architecture)
     perf_hints = generate_performance_hints(py_files)
     dev_tips = generate_developer_tips(project_type, architecture)
 
@@ -375,21 +404,41 @@ def analyze_project(all_files: List[Dict], repo_path: str) -> Dict:
         "total_lines": sum(len(f["content"].splitlines()) for f in py_files),
     }
 
-    # Health score (0-100)
-    health = 50
-    health += 10 if architecture["positives"] else 0
-    health -= 5 * len(architecture["issues"])
-    health += 5 * len(patterns["good_patterns"])
-    health -= 5 * len(patterns["anti_patterns"])
-    health += 10 if file_stats["test_files"] > 0 else 0
+    # Health score (0-100) based on various factors
+    # Start at 25 (poor baseline), scale up to 100 (excellent)
+    health = 25
+    
+    # Code quality is the foundation (max +25)
+    health += min(25, code_quality["overall_score"] * 0.25)
+    
+    # Architecture quality (max +20)
+    arch_positives_score = min(20, len(architecture["positives"]) * 5)
+    health += arch_positives_score
+    
+    arch_issues_penalty = min(15, len(architecture["issues"]) * 3)
+    health -= arch_issues_penalty
+    
+    # Design patterns (max +15)
+    good_pattern_bonus = min(15, len(patterns["good_patterns"]) * 3)
+    health += good_pattern_bonus
+    
+    anti_pattern_penalty = min(15, len(patterns["anti_patterns"]) * 3)
+    health -= anti_pattern_penalty
+    
+    # Testing presence (max +15)
+    health += 15 if file_stats["test_files"] > 0 else 0
+    
+    # Scaling: ensure variety in scores and realistic ceiling
     health = max(0, min(100, health))
 
     return {
+        "project_name": repo_name or "Unknown Project",
         "project_type": project_type,
         "type_signals": type_signals,
         "dependencies": dependencies,
         "architecture": architecture,
         "patterns": patterns,
+        "code_quality": code_quality,
         "performance_hints": perf_hints,
         "developer_tips": dev_tips,
         "file_stats": file_stats,

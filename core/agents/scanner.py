@@ -27,13 +27,10 @@ Each issue is returned as a dict:
 """
 
 import ast
-import re
-import tokenize
-import io
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict
 
-from core.lang_detector import detect_languages, get_language_info
+from core.lang_detector import detect_languages
 from core.agents.universal_analyzer import detect_universal_issues, detect_unused_imports
 
 MAX_FUNC_LINES = 50

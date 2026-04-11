@@ -8,6 +8,9 @@ Manages agent interactions and aggregates all results.
 import time
 import logging
 from typing import Callable, Dict, List, Optional, Tuple, BinaryIO
+from pathlib import Path
+import os
+import re
 
 from core.repo_loader import load_repository, cleanup_repo
 from core.agents.scanner import scan_repository, summarize_scan
@@ -20,13 +23,41 @@ from core.agents import llm_agent
 from core.data_validation import (
     normalize_scan_results,
     normalize_repair_results,
-    enrich_issues_for_ui,
 )
 from pathlib import Path
 
 # Setup debug logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+def _extract_repo_name(source: str, is_zip: bool) -> str:
+    """
+    Extract repository name from source (GitHub URL or ZIP file path).
+    
+    Args:
+        source: GitHub URL (e.g., https://github.com/user/repo) or ZIP file path
+        is_zip: Whether source is a ZIP file
+    
+    Returns:
+        Repository name string
+    """
+    try:
+        if is_zip:
+            # Extract from filename: /path/to/repo.zip -> repo
+            filename = os.path.basename(source)
+            repo_name = os.path.splitext(filename)[0]
+            return repo_name if repo_name else "Uploaded Project"
+        else:
+            # Extract from GitHub URL: https://github.com/user/repo -> repo
+            match = re.search(r'github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$', source)
+            if match:
+                owner, repo = match.groups()
+                return repo
+            # Fallback for other patterns
+            return source.split('/')[-1].replace('.git', '') or "Unknown Project"
+    except Exception:
+        return "Unknown Project"
 
 
 def _enrich_with_relative_path(results: List[Dict], repo_path: str) -> List[Dict]:
@@ -111,11 +142,25 @@ def run_pipeline(
         results["errors"].append(f"Repository loading failed: {e}")
         return results
 
+    # Extract repo name for display
+    repo_name = _extract_repo_name(source, is_zip)
+
     results["stages"]["load"] = {
         "repo_path": repo_data["repo_path"],
+        "repo_name": repo_name,
         "python_file_count": len(repo_data["python_files"]),
         "all_source_file_count": len(repo_data.get("all_source_files", [])),
         "total_file_count": len(repo_data["all_files"]),
+        # Store actual source files for evaluation (max 50KB per file to avoid bloat)
+        "source_files": [
+            {
+                "relative_path": f.get("relative_path", f.get("name", "unknown")),
+                "extension": f.get("extension", ""),
+                "content": f.get("content", "")[:50000],  # Limit to 50KB
+                "name": f.get("name", ""),
+            }
+            for f in repo_data.get("all_source_files", [])[:20]  # Limit to 20 files
+        ] if repo_data.get("all_source_files") else [],
     }
     results["timings"]["load"] = round(time.time() - t0, 2)
     _progress("Repository loaded.", 0.15)
@@ -242,7 +287,7 @@ def run_pipeline(
     t0 = time.time()
     try:
         project_analysis = analyze_project(
-            repo_data["all_files"], repo_data["repo_path"]
+            repo_data["all_files"], repo_data["repo_path"], repo_name
         )
         project_summary_text = build_project_summary_text(project_analysis)
 

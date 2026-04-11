@@ -7,12 +7,11 @@ or from an uploaded ZIP archive.  Returns a flat list of dicts:
 """
 
 import os
-import re
 import shutil
 import zipfile
 import tempfile
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 
 # ---------------------------------------------------------------------------

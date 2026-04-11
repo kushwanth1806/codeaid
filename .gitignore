@@ -1,3 +1,12 @@
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+secrets/
+*.pem
+*.key
+*.crt
+
 # Python
 __pycache__/
 *.py[cod]
@@ -16,37 +25,73 @@ parts/
 sdist/
 var/
 wheels/
+wheel/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 .venv/
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# IDE
+# IDE & Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# Testing
+# Testing & Coverage
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.coverage.*
 
 # Streamlit
 .streamlit/
 *.pth
 
-# Temporary
+# Node.js & Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+.vite/
+
+# Temporary Files
 tmp/
 temp/
 *.log
+*.tmp
+*.bak
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Development Artifacts
+debug/
+logs/
+*.log.old
+profile/
 
 # OS files
 .DS_Store

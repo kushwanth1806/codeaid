@@ -200,6 +200,7 @@ def _fix_unused_import_python(issue: Dict, file_entry: Dict, source: str, target
         return _failed(issue, "Cannot parse Python source to apply fix.")
 
     lines = source.splitlines(keepends=True)
+    original_snippet = _get_code_snippet(lines, target_line)
 
     for node in ast.walk(tree):
         # Skip nodes without lineno attribute
@@ -239,6 +240,7 @@ def _fix_unused_import_python(issue: Dict, file_entry: Dict, source: str, target
             break
 
     patched = "".join(lines)
+    fixed_snippet = _get_code_snippet(patched.splitlines(keepends=True), target_line)
     file_entry["source"] = patched
 
     return {
@@ -248,12 +250,15 @@ def _fix_unused_import_python(issue: Dict, file_entry: Dict, source: str, target
         "status": "fixed",
         "detail": f"Removed unused Python import '{target_name}'.",
         "patched": patched,
+        "original_snippet": original_snippet,
+        "fixed_snippet": fixed_snippet,
     }
 
 
 def _fix_unused_import_js(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int) -> Dict:
     """Fix unused JavaScript/TypeScript imports by removing the import line."""
     lines = source.splitlines(keepends=True)
+    original_snippet = _get_code_snippet(lines, target_line)
     
     if 0 < target_line <= len(lines):
         line = lines[target_line - 1]
@@ -261,6 +266,7 @@ def _fix_unused_import_js(issue: Dict, file_entry: Dict, source: str, target_nam
             del lines[target_line - 1]
     
     patched = "".join(lines)
+    fixed_snippet = _get_code_snippet(patched.splitlines(keepends=True), target_line)
     file_entry["source"] = patched
     
     return {
@@ -270,12 +276,15 @@ def _fix_unused_import_js(issue: Dict, file_entry: Dict, source: str, target_nam
         "status": "fixed",
         "detail": f"Removed unused JavaScript/TypeScript import '{target_name}'.",
         "patched": patched,
+        "original_snippet": original_snippet,
+        "fixed_snippet": fixed_snippet,
     }
 
 
 def _fix_unused_import_java(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int) -> Dict:
     """Fix unused Java imports by removing the import statement."""
     lines = source.splitlines(keepends=True)
+    original_snippet = _get_code_snippet(lines, target_line)
     
     if 0 < target_line <= len(lines):
         line = lines[target_line - 1]
@@ -283,6 +292,7 @@ def _fix_unused_import_java(issue: Dict, file_entry: Dict, source: str, target_n
             del lines[target_line - 1]
     
     patched = "".join(lines)
+    fixed_snippet = _get_code_snippet(patched.splitlines(keepends=True), target_line)
     file_entry["source"] = patched
     
     return {
@@ -292,17 +302,21 @@ def _fix_unused_import_java(issue: Dict, file_entry: Dict, source: str, target_n
         "status": "fixed",
         "detail": f"Removed unused Java import '{target_name}'.",
         "patched": patched,
+        "original_snippet": original_snippet,
+        "fixed_snippet": fixed_snippet,
     }
 
 
 def _fix_unused_import_generic(issue: Dict, file_entry: Dict, source: str, target_name: str, target_line: int, language: str) -> Dict:
     """Generic unused import fix for other languages."""
     lines = source.splitlines(keepends=True)
+    original_snippet = _get_code_snippet(lines, target_line)
     
     if 0 < target_line <= len(lines):
         del lines[target_line - 1]
     
     patched = "".join(lines)
+    fixed_snippet = _get_code_snippet(patched.splitlines(keepends=True), target_line)
     file_entry["source"] = patched
     
     return {
@@ -312,6 +326,8 @@ def _fix_unused_import_generic(issue: Dict, file_entry: Dict, source: str, targe
         "status": "fixed",
         "detail": f"Removed unused {language} import '{target_name}'.",
         "patched": patched,
+        "original_snippet": original_snippet,
+        "fixed_snippet": fixed_snippet,
     }
 
 
@@ -321,11 +337,13 @@ def _fix_trailing_whitespace(issue: Dict, file_entry: Dict) -> Dict:
     target_line = issue["line"]
     
     lines = source.splitlines(keepends=True)
+    original_snippet = _get_code_snippet(lines, target_line)
     
     if 0 < target_line <= len(lines):
         lines[target_line - 1] = lines[target_line - 1].rstrip() + "\n"
     
     patched = "".join(lines)
+    fixed_snippet = _get_code_snippet(patched.splitlines(keepends=True), target_line)
     file_entry["source"] = patched
     
     return {
@@ -335,8 +353,39 @@ def _fix_trailing_whitespace(issue: Dict, file_entry: Dict) -> Dict:
         "status": "fixed",
         "detail": "Removed trailing whitespace.",
         "patched": patched,
+        "original_snippet": original_snippet,
+        "fixed_snippet": fixed_snippet,
     }
 
+
+# ---------------------------------------------------------------------------
+# Code Snippet Extraction
+# ---------------------------------------------------------------------------
+
+def _get_code_snippet(lines: List[str], target_line: int, context_lines: int = 2) -> str:
+    """
+    Get a snippet of code around the target line.
+    
+    Parameters
+    ----------
+    lines : list of code lines (with or without newlines)
+    target_line : 1-based line number
+    context_lines : number of context lines before/after target
+    
+    Returns
+    -------
+    Multi-line string with the target line and context
+    """
+    if not lines or target_line < 1:
+        return ""
+    
+    start = max(0, target_line - context_lines - 1)
+    end = min(len(lines), target_line + context_lines)
+    
+    snippet_lines = lines[start:end]
+    snippet = "".join(snippet_lines).strip()
+    
+    return snippet
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -4,7 +4,7 @@ Metrics Utility: Computes precision, recall, F1-score for issue detection.
 Used in the CodeXGLUE evaluation tab.
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 def compute_precision_recall_f1(

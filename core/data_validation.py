@@ -15,7 +15,6 @@ Key Functions:
 """
 
 from typing import List, Dict, Optional, Tuple
-import re
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -258,6 +257,8 @@ def normalize_repair_results(repair_results: Optional[List[Dict]]) -> List[Dict]
                 "status": result.get("status") or "unknown",
                 "detail": result.get("detail") or "",
                 "patched": result.get("patched"),
+                "original_snippet": result.get("original_snippet", ""),
+                "fixed_snippet": result.get("fixed_snippet", ""),
             })
 
     return normalized

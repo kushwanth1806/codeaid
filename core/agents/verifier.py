@@ -14,7 +14,6 @@ Returns a list of verification result dicts:
   }
 """
 
-import ast
 from typing import List, Dict
 
 

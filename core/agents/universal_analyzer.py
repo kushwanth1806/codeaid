@@ -15,8 +15,7 @@ Detects common code issues that apply across all languages:
 """
 
 import re
-from typing import List, Dict, Tuple, Pattern
-from pathlib import Path
+from typing import List, Dict
 
 
 # ──────────────────────────────────────────────────────────────────────────
